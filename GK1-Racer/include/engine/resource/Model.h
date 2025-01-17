@@ -2,10 +2,11 @@
 #include "engine/resource/Resource.h"
 #include "engine/resource/Mesh.h"
 #include "engine/resource/Material.h"
+#include "engine/GraphicsObject.h"
 #include <memory>
 #include <vector>
 
-class Model : public Resource {
+class Model : public Resource, GraphicsObject {
 public:
 
 	struct MeshComponent {
@@ -17,7 +18,7 @@ public:
 	~Model() override;
 
 	static std::shared_ptr<Model> LoadFromFile(const std::string &path);
-	void Draw() const;
+	void Draw() override;
 
 	void AddMeshComponent(const MeshComponent &entry);
 	const std::vector<MeshComponent> &GetMeshes() const { return m_meshes; }

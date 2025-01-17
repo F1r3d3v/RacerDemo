@@ -28,7 +28,7 @@ std::shared_ptr<Model> Model::LoadFromFile(const std::string &path)
 	return factory->Load(path);
 }
 
-void Model::Draw() const
+void Model::Draw()
 {
 	for (const auto &meshComponent : m_meshes)
 	{

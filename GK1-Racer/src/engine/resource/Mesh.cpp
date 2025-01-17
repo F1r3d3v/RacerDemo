@@ -94,7 +94,7 @@ void Mesh::SetupMesh()
 	glBindVertexArray(0);
 }
 
-void Mesh::Draw() const
+void Mesh::Draw()
 {
 	glBindVertexArray(m_vao);
 	glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(m_indexCount), GL_UNSIGNED_INT, 0);

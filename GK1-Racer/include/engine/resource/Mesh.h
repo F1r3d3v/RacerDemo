@@ -1,10 +1,11 @@
 #pragma once
 #include "engine/resource/Resource.h"
+#include "engine/GraphicsObject.h"
 #include <glm/glm.hpp>
 #include <glad/gl.h>
 #include <vector>
 
-class Mesh : public Resource {
+class Mesh : public Resource, GraphicsObject {
 public:
 
 	struct Vertex {
@@ -20,7 +21,7 @@ public:
 	~Mesh();
 
 	void SetData(const std::vector<Vertex> &vertices, const std::vector<uint32_t> &indices);
-	void Draw() const;
+	void Draw() override;
 
 	GLuint GetVAO() const { return m_vao; }
 	GLuint GetVBO() const { return m_vbo; }

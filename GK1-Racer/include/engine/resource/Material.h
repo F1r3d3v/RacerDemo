@@ -9,8 +9,10 @@ class Material : public Resource {
 public:
 
 	struct Properties {
-		glm::vec3 albedo{ 1.0f };
-		float metallic{ 0.0f };
+		glm::vec3 ambient{ 1.0f };
+		glm::vec3 diffuse{ 1.0f };
+		glm::vec3 specular{ 1.0f };
+		float shininess{ 32.0f };
 	};
 
 	Material();
@@ -25,7 +27,7 @@ public:
 	void Unbind() const;
 
 	std::shared_ptr<Shader> GetShader() const { return m_shader; }
-	std::shared_ptr<Shader> GetTexture(Texture::TextureType type) const;
+	std::shared_ptr<Texture> GetTexture(Texture::TextureType type) const;
 	const Properties &GetProperties() const { return m_properties; }
 
 private:

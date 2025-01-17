@@ -9,7 +9,10 @@ class Texture : public Resource {
 public:
 
 	enum class TextureType {
+		Ambient,
 		Diffuse,
+		Specular,
+		Shininess,
 		Normal,
 		Height,
 		Cubemap
