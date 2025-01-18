@@ -11,68 +11,27 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="include\engine\loader\LoaderManager.h" />
-    <ClCompile Include="src\engine\Camera.cpp" />
-    <ClCompile Include="src\engine\InstancedObject.cpp" />
-    <ClCompile Include="src\engine\loader\model\OBJLoader.cpp" />
-    <ClCompile Include="src\engine\Log.cpp" />
-    <ClCompile Include="src\engine\Input.cpp" />
-    <ClCompile Include="src\app\MyApp.cpp" />
-    <ClCompile Include="src\engine\App.cpp" />
-    <ClCompile Include="src\engine\ImGUI_Impl.cpp" />
-    <ClCompile Include="src\engine\Renderer.cpp" />
-    <ClCompile Include="src\engine\ResourceManager.cpp" />
-    <ClCompile Include="src\engine\resource\Material.cpp" />
-    <ClCompile Include="src\engine\resource\Mesh.cpp" />
-    <ClCompile Include="src\engine\resource\Model.cpp" />
-    <ClCompile Include="src\engine\resource\Shader.cpp" />
-    <ClCompile Include="src\engine\resource\Skybox.cpp" />
-    <ClCompile Include="src\engine\resource\Texture.cpp" />
-    <ClCompile Include="src\main.cpp" />
-    <ClCompile Include="src\engine\Window.cpp" />
-    <ClCompile Include="src\engine\Transform.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="lib\glfw\lib-vc2022\glfw3.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <Link>%(Filename)%(Extension)</Link>
-    </Content>
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="include\engine\Camera.h" />
-    <ClInclude Include="include\engine\Concepts.h" />
-    <ClInclude Include="include\engine\GraphicsObject.h" />
-    <ClInclude Include="include\app\Config.h" />
-    <ClInclude Include="include\engine\ImGUI_Impl.h" />
-    <ClInclude Include="include\engine\loader\model\ModelLoader.h" />
-    <ClInclude Include="include\engine\loader\LoaderFactory.h" />
-    <ClInclude Include="include\engine\loader\model\OBJLoader.h" />
-    <ClInclude Include="include\engine\resource\Resource.h" />
-    <ClInclude Include="include\engine\ResourceManager.h" />
-    <ClInclude Include="include\engine\resource\Material.h" />
-    <ClInclude Include="include\engine\resource\Mesh.h" />
-    <ClInclude Include="include\engine\resource\Model.h" />
-    <ClInclude Include="include\engine\resource\Shader.h" />
-    <ClInclude Include="include\engine\resource\Skybox.h" />
-    <ClInclude Include="include\engine\resource\Texture.h" />
-    <ClInclude Include="include\engine\Window.h" />
-    <ClInclude Include="include\engine\Renderer.h" />
-    <ClInclude Include="include\engine\App.h" />
-    <ClInclude Include="include\app\MyApp.h" />
-    <ClInclude Include="include\engine\Input.h" />
-    <ClInclude Include="include\engine\Log.h" />
-    <ClInclude Include="include\engine\InstancedObject.h" />
-    <ClInclude Include="include\engine\Transform.h" />
-  </ItemGroup>
-  <ItemGroup>
     <Content Include="assets\**">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Link>assets\%(RecursiveDir)\%(Filename)%(Extension)</Link>
     </Content>
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="include\Config.h" />
+    <ClInclude Include="include\MyApp.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\MyApp.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\GK1-Engine\GK1-Engine.vcxproj">
+      <Project>{062a0631-13b4-487b-98c8-a2985057faeb}</Project>
+    </ProjectReference>
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{AB8EFDCF-F30B-48B1-8F72-BE9196951639}</ProjectGuid>
-    <RootNamespace>GravitationBox</RootNamespace>
+    <RootNamespace>GK1-Racer</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -110,15 +69,15 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>GLM_ENABLE_EXPERIMENTAL;GLAD_API_CALL_EXPORT;IMGUI_API_CALL_EXPORT;WIN32;WIN64;_CRT_SECURE_NO_WARNINGS;NOMINMAX;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;WIN64;_CRT_SECURE_NO_WARNINGS;NOMINMAX;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)include\app;$(ProjectDir)include;$(SolutionDir)GLAD\include;$(ProjectDir)lib\glfw\include;$(ProjectDir)lib\stb;$(ProjectDir)lib\glm\include;$(SolutionDir)ImGUI;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)include;$(SolutionDir)GK1-Engine\include;$(SolutionDir)GLAD\include;$(SolutionDir)GK1-Engine\lib\glfw\include;$(SolutionDir)GK1-Engine\lib\stb;$(SolutionDir)GK1-Engine\lib\glm\include;$(SolutionDir)GK1-Engine\lib\ImGUI;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
-      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;opengl32.lib;glfw3.lib;glfw3dll.lib;GLAD.lib;ImGUI.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(ProjectDir)lib\glfw\lib-vc2022;$(SolutionDir)GLAD\obj\x64\Debug;$(SolutionDir)ImGUI\obj\x64\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;glfw3.lib;glfw3dll.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)GK1-Engine\lib\glfw\lib-vc2022;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -127,17 +86,17 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>GLM_ENABLE_EXPERIMENTAL;GLAD_API_CALL_EXPORT;IMGUI_API_CALL_EXPORT;WIN32;WIN64;_CRT_SECURE_NO_WARNINGS;NOMINMAX;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;WIN64;_CRT_SECURE_NO_WARNINGS;NOMINMAX;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)include\app;$(ProjectDir)include;$(SolutionDir)GLAD\include;$(ProjectDir)lib\glfw\include;$(ProjectDir)lib\stb;$(ProjectDir)lib\glm\include;$(SolutionDir)ImGUI;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)include;$(SolutionDir)GK1-Engine\include;$(SolutionDir)GLAD\include;$(SolutionDir)GK1-Engine\lib\glfw\include;$(SolutionDir)GK1-Engine\lib\stb;$(SolutionDir)GK1-Engine\lib\glm\include;$(SolutionDir)GK1-Engine\lib\ImGUI;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <SubSystem>Windows</SubSystem>
-      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;opengl32.lib;glfw3.lib;glfw3dll.lib;GLAD.lib;ImGUI.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(ProjectDir)lib\glfw\lib-vc2022;$(SolutionDir)GLAD\obj\x64\Release;$(SolutionDir)ImGUI\obj\x64\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;glfw3.lib;glfw3dll.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)GK1-Engine\lib\glfw\lib-vc2022;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

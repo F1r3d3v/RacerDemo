@@ -10,7 +10,7 @@ int main(int argc, char **argv)
 {
 	try
 	{
-		MyApp app = MyApp("Gravitation Box", 1600, 900);
+		MyApp app = MyApp("GK1-Racer", 1600, 900);
 		app.Run();
 	}
 	catch (const std::exception &e)

@@ -3,48 +3,43 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.11.35327.3
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "GK1-Racer", "GK1-Racer\GK1-Racer.vcxproj", "{AB8EFDCF-F30B-48B1-8F72-BE9196951639}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "GK1-Engine", "GK1-Engine\GK1-Engine.vcxproj", "{062A0631-13B4-487B-98C8-A2985057FAEB}"
 	ProjectSection(ProjectDependencies) = postProject
 		{AB735E04-6751-4AAA-AC01-9C826B36287A} = {AB735E04-6751-4AAA-AC01-9C826B36287A}
 		{D6EF9297-1905-4719-AAE7-CEE335503356} = {D6EF9297-1905-4719-AAE7-CEE335503356}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "GLAD", "GLAD\GLAD.vcxproj", "{D6EF9297-1905-4719-AAE7-CEE335503356}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "GK1-Racer", "GK1-Racer\GK1-Racer.vcxproj", "{AB8EFDCF-F30B-48B1-8F72-BE9196951639}"
+	ProjectSection(ProjectDependencies) = postProject
+		{062A0631-13B4-487B-98C8-A2985057FAEB} = {062A0631-13B4-487B-98C8-A2985057FAEB}
+	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ImGUI", "ImGUI\ImGUI.vcxproj", "{AB735E04-6751-4AAA-AC01-9C826B36287A}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ImGUI", "GK1-Engine\lib\ImGUI\ImGUI.vcxproj", "{AB735E04-6751-4AAA-AC01-9C826B36287A}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "GLAD", "GK1-Engine\lib\GLAD\GLAD.vcxproj", "{D6EF9297-1905-4719-AAE7-CEE335503356}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
-		Debug|x86 = Debug|x86
 		Release|x64 = Release|x64
-		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{AB8EFDCF-F30B-48B1-8F72-BE9196951639}.Debug|x64.ActiveCfg = Debug|x64
 		{AB8EFDCF-F30B-48B1-8F72-BE9196951639}.Debug|x64.Build.0 = Debug|x64
-		{AB8EFDCF-F30B-48B1-8F72-BE9196951639}.Debug|x86.ActiveCfg = Debug|x64
-		{AB8EFDCF-F30B-48B1-8F72-BE9196951639}.Debug|x86.Build.0 = Debug|x64
 		{AB8EFDCF-F30B-48B1-8F72-BE9196951639}.Release|x64.ActiveCfg = Release|x64
 		{AB8EFDCF-F30B-48B1-8F72-BE9196951639}.Release|x64.Build.0 = Release|x64
-		{AB8EFDCF-F30B-48B1-8F72-BE9196951639}.Release|x86.ActiveCfg = Release|x64
-		{AB8EFDCF-F30B-48B1-8F72-BE9196951639}.Release|x86.Build.0 = Release|x64
 		{D6EF9297-1905-4719-AAE7-CEE335503356}.Debug|x64.ActiveCfg = Debug|x64
 		{D6EF9297-1905-4719-AAE7-CEE335503356}.Debug|x64.Build.0 = Debug|x64
-		{D6EF9297-1905-4719-AAE7-CEE335503356}.Debug|x86.ActiveCfg = Debug|Win32
-		{D6EF9297-1905-4719-AAE7-CEE335503356}.Debug|x86.Build.0 = Debug|Win32
 		{D6EF9297-1905-4719-AAE7-CEE335503356}.Release|x64.ActiveCfg = Release|x64
 		{D6EF9297-1905-4719-AAE7-CEE335503356}.Release|x64.Build.0 = Release|x64
-		{D6EF9297-1905-4719-AAE7-CEE335503356}.Release|x86.ActiveCfg = Release|Win32
-		{D6EF9297-1905-4719-AAE7-CEE335503356}.Release|x86.Build.0 = Release|Win32
 		{AB735E04-6751-4AAA-AC01-9C826B36287A}.Debug|x64.ActiveCfg = Debug|x64
 		{AB735E04-6751-4AAA-AC01-9C826B36287A}.Debug|x64.Build.0 = Debug|x64
-		{AB735E04-6751-4AAA-AC01-9C826B36287A}.Debug|x86.ActiveCfg = Debug|Win32
-		{AB735E04-6751-4AAA-AC01-9C826B36287A}.Debug|x86.Build.0 = Debug|Win32
 		{AB735E04-6751-4AAA-AC01-9C826B36287A}.Release|x64.ActiveCfg = Release|x64
 		{AB735E04-6751-4AAA-AC01-9C826B36287A}.Release|x64.Build.0 = Release|x64
-		{AB735E04-6751-4AAA-AC01-9C826B36287A}.Release|x86.ActiveCfg = Release|Win32
-		{AB735E04-6751-4AAA-AC01-9C826B36287A}.Release|x86.Build.0 = Release|Win32
+		{062A0631-13B4-487B-98C8-A2985057FAEB}.Debug|x64.ActiveCfg = Debug|x64
+		{062A0631-13B4-487B-98C8-A2985057FAEB}.Debug|x64.Build.0 = Debug|x64
+		{062A0631-13B4-487B-98C8-A2985057FAEB}.Release|x64.ActiveCfg = Release|x64
+		{062A0631-13B4-487B-98C8-A2985057FAEB}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
