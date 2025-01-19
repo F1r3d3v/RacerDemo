@@ -21,6 +21,7 @@ App::App(std::string title, int width, int height)
 	glfwSetWindowUserPointer(m_Window->GetHandle(), this);
 	glfwSetFramebufferSizeCallback(m_Window->GetHandle(), [](GLFWwindow *window, int width, int height)
 		{
+			glViewport(0, 0, width, height);
 			App *app = static_cast<App *>(glfwGetWindowUserPointer(window));
 			app->OnResize(width, height);
 		});

@@ -99,7 +99,6 @@ void MyApp::OnUpdate(float deltaTime)
 		double xpos, ypos;
 		Input::GetMouseDelta(xpos, ypos);
 		glm::vec2 mouseDelta(xpos, ypos);
-		Log::Info(std::format("Mouse delta: ({}, {})", mouseDelta.x, mouseDelta.y));
 
 		float sensitivity = 0.1f;
 		mouseDelta *= sensitivity;
@@ -146,4 +145,9 @@ void MyApp::OnImGuiRender()
 
 	ImGui::SetWindowSize(ImVec2(ImGui::GetWindowWidth(), 0.0));
 	ImGui::End();
+}
+
+void MyApp::OnResize(int width, int height)
+{
+	camera.SetAspectRatio((float)width / height);
 }

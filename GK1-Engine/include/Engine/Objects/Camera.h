@@ -6,6 +6,13 @@
 
 class Camera : public Transform {
 public:
+
+	enum class ProjectionType {
+		None,
+		Perspective,
+		Orthographic
+	};
+
 	Camera();
 	virtual ~Camera() override;
 
@@ -19,6 +26,7 @@ public:
 	void Move(const glm::vec3 &offset) override;
 	void Rotate(const glm::vec3 &angles) override;
 
+	ProjectionType GetProjectionType() const;
 	float GetFov() const;
 	float GetNearPlane() const;
 	float GetFarPlane() const;
@@ -33,7 +41,7 @@ private:
 	float m_aspectRatio;
 	float m_nearPlane;
 	float m_farPlane;
-	bool m_isOrtho;
+	ProjectionType m_Type;
 
 	mutable glm::mat4 m_viewMatrix;
 	mutable glm::mat4 m_projectionMatrix;

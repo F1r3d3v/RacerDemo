@@ -12,6 +12,7 @@ public:
 	void OnUpdate(float deltaTime) override;
 	void OnRender(Renderer* renderer) override;
 	void OnImGuiRender() override;
+	void OnResize(int width, int height) override;
 
 private:
 	bool m_EnterGame = false;

@@ -13,7 +13,7 @@ Camera::Camera() : Transform()
 , m_projectionMatrix(1.0f)
 , m_viewChanged(true)
 , m_projectionChanged(true)
-, m_isOrtho(false)
+, m_Type(ProjectionType::None)
 {
 }
 
@@ -49,7 +49,7 @@ glm::mat4 Camera::GetViewMatrix() const
 
 void Camera::SetPerspective(float fov, float aspect, float nearPlane, float farPlane)
 {
-	m_isOrtho = false;
+	m_Type = ProjectionType::Perspective;
 	m_fieldOfView = fov;
 	m_aspectRatio = aspect;
 	m_nearPlane = nearPlane;
@@ -59,7 +59,7 @@ void Camera::SetPerspective(float fov, float aspect, float nearPlane, float farP
 
 void Camera::SetOrthographic(float left, float right, float bottom, float top, float nearPlane, float farPlane)
 {
-	m_isOrtho = true;
+	m_Type = ProjectionType::Orthographic;
 	m_nearPlane = nearPlane;
 	m_farPlane = farPlane;
 	m_projectionMatrix = glm::ortho(left, right, bottom, top, nearPlane, farPlane);
@@ -88,6 +88,11 @@ void Camera::Rotate(const glm::vec3 &angles)
 {
 	Transform::Rotate(angles);
 	m_viewChanged = true;
+}
+
+Camera::ProjectionType Camera::GetProjectionType() const
+{
+	return m_Type;
 }
 
 float Camera::GetFov() const
