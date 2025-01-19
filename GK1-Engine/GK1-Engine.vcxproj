@@ -100,56 +100,59 @@
     <Lib />
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="include\App.h" />
-    <ClInclude Include="include\Camera.h" />
-    <ClInclude Include="include\Concepts.h" />
-    <ClInclude Include="include\GraphicsObject.h" />
-    <ClInclude Include="include\ImGUI_Impl.h" />
-    <ClInclude Include="include\Input.h" />
-    <ClInclude Include="include\InstancedObject.h" />
-    <ClInclude Include="include\loader\LoaderFactory.h" />
-    <ClInclude Include="include\loader\LoaderManager.h" />
-    <ClInclude Include="include\loader\model\ModelLoader.h" />
-    <ClInclude Include="include\loader\model\OBJLoader.h" />
-    <ClInclude Include="include\Log.h" />
-    <ClInclude Include="include\Renderer.h" />
-    <ClInclude Include="include\ResourceManager.h" />
-    <ClInclude Include="include\resource\Material.h" />
-    <ClInclude Include="include\resource\Mesh.h" />
-    <ClInclude Include="include\resource\Model.h" />
-    <ClInclude Include="include\resource\Resource.h" />
-    <ClInclude Include="include\resource\Shader.h" />
-    <ClInclude Include="include\resource\Skybox.h" />
-    <ClInclude Include="include\resource\Texture.h" />
-    <ClInclude Include="include\Transform.h" />
-    <ClInclude Include="include\Window.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="src\App.cpp" />
-    <ClCompile Include="src\Camera.cpp" />
-    <ClCompile Include="src\ImGUI_Impl.cpp" />
-    <ClCompile Include="src\Input.cpp" />
-    <ClCompile Include="src\InstancedObject.cpp" />
-    <ClCompile Include="src\loader\model\OBJLoader.cpp" />
-    <ClCompile Include="src\Log.cpp" />
-    <ClCompile Include="src\Renderer.cpp" />
-    <ClCompile Include="src\ResourceManager.cpp" />
-    <ClCompile Include="src\resource\Material.cpp" />
-    <ClCompile Include="src\resource\Mesh.cpp" />
-    <ClCompile Include="src\resource\Model.cpp" />
-    <ClCompile Include="src\resource\Shader.cpp" />
-    <ClCompile Include="src\resource\Skybox.cpp" />
-    <ClCompile Include="src\resource\Texture.cpp" />
-    <ClCompile Include="src\Transform.cpp" />
-    <ClCompile Include="src\Window.cpp" />
-  </ItemGroup>
-  <ItemGroup>
     <ProjectReference Include="lib\GLAD\GLAD.vcxproj">
       <Project>{d6ef9297-1905-4719-aae7-cee335503356}</Project>
     </ProjectReference>
     <ProjectReference Include="lib\ImGUI\ImGUI.vcxproj">
       <Project>{ab735e04-6751-4aaa-ac01-9c826b36287a}</Project>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="include\Engine\App.h" />
+    <ClInclude Include="include\Engine\Loader\Material\MaterialLoader.h" />
+    <ClInclude Include="include\Engine\Loader\Material\MTLLoader.h" />
+    <ClInclude Include="include\Engine\Objects\Camera.h" />
+    <ClInclude Include="include\Engine\Concepts.h" />
+    <ClInclude Include="include\Engine\Objects\GraphicsObject.h" />
+    <ClInclude Include="include\Engine\ImGUI_Impl.h" />
+    <ClInclude Include="include\Engine\Input.h" />
+    <ClInclude Include="include\Engine\InstancedObject.h" />
+    <ClInclude Include="include\Engine\Loader\LoaderFactory.h" />
+    <ClInclude Include="include\Engine\Loader\LoaderManager.h" />
+    <ClInclude Include="include\Engine\Loader\Model\ModelLoader.h" />
+    <ClInclude Include="include\Engine\Loader\Model\OBJLoader.h" />
+    <ClInclude Include="include\Engine\Log.h" />
+    <ClInclude Include="include\Engine\Renderer.h" />
+    <ClInclude Include="include\Engine\ResourceManager.h" />
+    <ClInclude Include="include\Engine\Resource\Material.h" />
+    <ClInclude Include="include\Engine\Resource\Mesh.h" />
+    <ClInclude Include="include\Engine\Objects\Model.h" />
+    <ClInclude Include="include\Engine\Resource\Resource.h" />
+    <ClInclude Include="include\Engine\Resource\Shader.h" />
+    <ClInclude Include="include\Engine\Objects\Skybox.h" />
+    <ClInclude Include="include\Engine\Resource\Texture.h" />
+    <ClInclude Include="include\Engine\Transform.h" />
+    <ClInclude Include="include\Engine\Window.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\Engine\App.cpp" />
+    <ClCompile Include="src\Engine\Loader\MTLLoader.cpp" />
+    <ClCompile Include="src\Engine\Objects\Camera.cpp" />
+    <ClCompile Include="src\Engine\ImGUI_Impl.cpp" />
+    <ClCompile Include="src\Engine\Input.cpp" />
+    <ClCompile Include="src\Engine\InstancedObject.cpp" />
+    <ClCompile Include="src\Engine\Loader\Model\OBJLoader.cpp" />
+    <ClCompile Include="src\Engine\Log.cpp" />
+    <ClCompile Include="src\Engine\Renderer.cpp" />
+    <ClCompile Include="src\Engine\ResourceManager.cpp" />
+    <ClCompile Include="src\Engine\Resource\Material.cpp" />
+    <ClCompile Include="src\Engine\Resource\Mesh.cpp" />
+    <ClCompile Include="src\Engine\Objects\Model.cpp" />
+    <ClCompile Include="src\Engine\Resource\Shader.cpp" />
+    <ClCompile Include="src\Engine\Objects\Skybox.cpp" />
+    <ClCompile Include="src\Engine\Resource\Texture.cpp" />
+    <ClCompile Include="src\Engine\Transform.cpp" />
+    <ClCompile Include="src\Engine\Window.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

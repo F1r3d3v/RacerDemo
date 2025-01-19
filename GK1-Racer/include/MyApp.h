@@ -1,5 +1,5 @@
 #pragma once
-#include "App.h"
+#include "Engine/App.h"
 
 #include <imgui.h>
 
@@ -12,5 +12,8 @@ public:
 	void OnUpdate(float deltaTime) override;
 	void OnRender(Renderer* renderer) override;
 	void OnImGuiRender() override;
+
+private:
+	bool m_EnterGame = false;
 };
 

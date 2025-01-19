@@ -71,7 +71,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;WIN64;_CRT_SECURE_NO_WARNINGS;NOMINMAX;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)include;$(SolutionDir)GK1-Engine\include;$(SolutionDir)GLAD\include;$(SolutionDir)GK1-Engine\lib\glfw\include;$(SolutionDir)GK1-Engine\lib\stb;$(SolutionDir)GK1-Engine\lib\glm\include;$(SolutionDir)GK1-Engine\lib\ImGUI;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)include;$(SolutionDir)GK1-Engine\include;$(SolutionDir)GK1-Engine\lib\GLAD\include;$(SolutionDir)GK1-Engine\lib\glfw\include;$(SolutionDir)GK1-Engine\lib\stb;$(SolutionDir)GK1-Engine\lib\glm\include;$(SolutionDir)GK1-Engine\lib\ImGUI;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -88,7 +88,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;WIN64;_CRT_SECURE_NO_WARNINGS;NOMINMAX;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)include;$(SolutionDir)GK1-Engine\include;$(SolutionDir)GLAD\include;$(SolutionDir)GK1-Engine\lib\glfw\include;$(SolutionDir)GK1-Engine\lib\stb;$(SolutionDir)GK1-Engine\lib\glm\include;$(SolutionDir)GK1-Engine\lib\ImGUI;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)include;$(SolutionDir)GK1-Engine\include;$(SolutionDir)GK1-Engine\lib\GLAD\include;$(SolutionDir)GK1-Engine\lib\glfw\include;$(SolutionDir)GK1-Engine\lib\stb;$(SolutionDir)GK1-Engine\lib\glm\include;$(SolutionDir)GK1-Engine\lib\ImGUI;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
