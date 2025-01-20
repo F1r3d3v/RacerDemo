@@ -1,54 +1,54 @@
 #include "Engine/Objects/Skybox.h"
 
 // Skybox vertices - a cube centered at origin
-static constexpr float kSkyboxVertices[] = {
-	// positions          
-	-1.0f,  1.0f, -1.0f,
+static constexpr float kSkyboxVertices[] = {         
+	-1.0f,  1.0f, -1.0f, // Front face
+	 1.0f, -1.0f, -1.0f,
 	-1.0f, -1.0f, -1.0f,
-	 1.0f, -1.0f, -1.0f,
-	 1.0f, -1.0f, -1.0f,
+	-1.0f,  1.0f, -1.0f,
 	 1.0f,  1.0f, -1.0f,
-	-1.0f,  1.0f, -1.0f,
-
-	-1.0f, -1.0f,  1.0f,
-	-1.0f, -1.0f, -1.0f,
-	-1.0f,  1.0f, -1.0f,
-	-1.0f,  1.0f, -1.0f,
-	-1.0f,  1.0f,  1.0f,
-	-1.0f, -1.0f,  1.0f,
-
 	 1.0f, -1.0f, -1.0f,
+
+	-1.0f, -1.0f, -1.0f, // Left face
+	-1.0f, -1.0f,  1.0f,
+	-1.0f,  1.0f, -1.0f,
+	-1.0f,  1.0f, -1.0f,
+	-1.0f, -1.0f,  1.0f,
+	-1.0f,  1.0f,  1.0f,
+
+	 1.0f, -1.0f, -1.0f, // Right face
+	 1.0f,  1.0f, -1.0f,
+	 1.0f, -1.0f,  1.0f,
+	 1.0f, -1.0f,  1.0f,
+	 1.0f,  1.0f, -1.0f,
+	 1.0f,  1.0f,  1.0f,
+
+	-1.0f, -1.0f,  1.0f, // Back face
+	 1.0f, -1.0f,  1.0f,
+	-1.0f,  1.0f,  1.0f,
+	-1.0f,  1.0f,  1.0f,
 	 1.0f, -1.0f,  1.0f,
 	 1.0f,  1.0f,  1.0f,
-	 1.0f,  1.0f,  1.0f,
-	 1.0f,  1.0f, -1.0f,
-	 1.0f, -1.0f, -1.0f,
 
-	-1.0f, -1.0f,  1.0f,
+	-1.0f,  1.0f, -1.0f, // Top face
+	-1.0f,  1.0f,  1.0f,
+	 1.0f,  1.0f, -1.0f,
+	 1.0f,  1.0f, -1.0f,
 	-1.0f,  1.0f,  1.0f,
 	 1.0f,  1.0f,  1.0f,
-	 1.0f,  1.0f,  1.0f,
-	 1.0f, -1.0f,  1.0f,
-	-1.0f, -1.0f,  1.0f,
 
-	-1.0f,  1.0f, -1.0f,
-	 1.0f,  1.0f, -1.0f,
-	 1.0f,  1.0f,  1.0f,
-	 1.0f,  1.0f,  1.0f,
-	-1.0f,  1.0f,  1.0f,
-	-1.0f,  1.0f, -1.0f,
-
-	-1.0f, -1.0f, -1.0f,
-	-1.0f, -1.0f,  1.0f,
-	 1.0f, -1.0f, -1.0f,
+	-1.0f, -1.0f, -1.0f, // Bottom face
 	 1.0f, -1.0f, -1.0f,
 	-1.0f, -1.0f,  1.0f,
+	-1.0f, -1.0f,  1.0f,
+	 1.0f, -1.0f, -1.0f,
 	 1.0f, -1.0f,  1.0f
 };
 
+
 Skybox::Skybox() : m_vao(0), m_vbo(0)
 {
-	SetupMesh();
+	SetupGeometry();
 }
 
 Skybox::~Skybox()
@@ -92,7 +92,7 @@ std::shared_ptr<Skybox> Skybox::LoadFromFiles(const std::vector<std::string> &fa
 	return LoadFromCubemap(cubemap);
 }
 
-void Skybox::SetupMesh()
+void Skybox::SetupGeometry()
 {
 	glGenVertexArrays(1, &m_vao);
 	glGenBuffers(1, &m_vbo);

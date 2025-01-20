@@ -2,8 +2,9 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 #include <iostream>
+#include <unordered_map>
 
-Texture::Texture() : m_textureID(0), m_width(0), m_height(0), m_channels(0),
+Texture::Texture() : m_textureID(0), m_width(0), m_height(0), m_channels(0), m_data(nullptr),
 m_type(TextureType::Diffuse), m_format(GL_RGB), m_internalFormat(GL_RGB)
 {
 }
@@ -11,6 +12,10 @@ m_type(TextureType::Diffuse), m_format(GL_RGB), m_internalFormat(GL_RGB)
 Texture::~Texture()
 {
 	glDeleteTextures(1, &m_textureID);
+	if (m_data)
+	{
+		free(m_data);
+	}
 }
 
 std::shared_ptr<Texture> Texture::LoadFromFile(const std::string &path, Texture::TextureType type, bool generateMipMaps)
@@ -19,23 +24,33 @@ std::shared_ptr<Texture> Texture::LoadFromFile(const std::string &path, Texture:
 	texture->m_type = type;
 
 	stbi_set_flip_vertically_on_load(true);
-	unsigned char *data = stbi_load(path.c_str(), &texture->m_width, &texture->m_height,
-									&texture->m_channels, 0);
+	texture->m_data = stbi_load(path.c_str(), &texture->m_width, &texture->m_height, &texture->m_channels, 0);
 
-	if (!data)
+	if (!texture->m_data)
 	{
 		std::cerr << "Failed to load texture: " << path << std::endl;
 		return nullptr;
 	}
 
-	texture->m_format = texture->m_channels == 4 ? GL_RGBA : GL_RGB;
+	// unordered map for channel mapping
+	std::unordered_map<int, int> channelMap = {
+		{1, GL_RED},
+		{3, GL_RGB},
+		{4, GL_RGBA}
+	};
+	texture->m_format = channelMap[texture->m_channels];
 	texture->m_internalFormat = texture->m_format;
 
 	glGenTextures(1, &texture->m_textureID);
 	glBindTexture(GL_TEXTURE_2D, texture->m_textureID);
 
+	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+	glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
+	glPixelStorei(GL_UNPACK_SKIP_PIXELS, 0);
+	glPixelStorei(GL_UNPACK_SKIP_ROWS, 0);
+
 	glTexImage2D(GL_TEXTURE_2D, 0, texture->m_internalFormat, texture->m_width,
-				 texture->m_height, 0, texture->m_format, GL_UNSIGNED_BYTE, data);
+				 texture->m_height, 0, texture->m_format, GL_UNSIGNED_BYTE, texture->m_data);
 
 	if (generateMipMaps)
 	{
@@ -47,11 +62,10 @@ std::shared_ptr<Texture> Texture::LoadFromFile(const std::string &path, Texture:
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, generateMipMaps ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-	stbi_image_free(data);
 	return texture;
 }
 
-std::shared_ptr<Texture> Texture::LoadFromData(const unsigned char *data, int width, int height,
+std::shared_ptr<Texture> Texture::LoadFromData(const uint8_t *data, int width, int height,
 											   int channels, Texture::TextureType type, bool generateMipMaps)
 {
 	auto texture = std::make_shared<Texture>();
@@ -61,6 +75,8 @@ std::shared_ptr<Texture> Texture::LoadFromData(const unsigned char *data, int wi
 	texture->m_channels = channels;
 	texture->m_format = channels == 4 ? GL_RGBA : GL_RGB;
 	texture->m_internalFormat = texture->m_format;
+	texture->m_type = type;
+	texture->m_data = (uint8_t*)malloc(width * height * channels);
 
 	glGenTextures(1, &texture->m_textureID);
 	glBindTexture(GL_TEXTURE_2D, texture->m_textureID);

@@ -1,6 +1,6 @@
 #pragma once
-#include "engine/resource/Mesh.h"
-#include "engine/loader/model/ModelLoader.h"
+#include "Engine/Geometry.h"
+#include "Engine/Loader/Model/ModelLoader.h"
 #include <glm/glm.hpp>
 #include <string>
 #include <vector>
@@ -11,7 +11,7 @@ class OBJLoader : public ModelLoader {
 public:
 	struct MeshData {
 		std::string name;
-		std::vector<Mesh::Vertex> vertices;
+		std::vector<Geometry::Vertex> vertices;
 		std::vector<uint32_t> indices;
 		std::shared_ptr<Material> material;
 	};
@@ -35,7 +35,7 @@ private:
 	std::vector<std::shared_ptr<Material>> m_materials;
 
 	OBJData LoadOBJ(const std::string &path);
-	void CalculateTangents(std::vector<Mesh::Vertex> &vertices, const std::vector<uint32_t> &indices);
+	void CalculateTangents(std::vector<Geometry::Vertex> &vertices, const std::vector<uint32_t> &indices);
 	glm::vec3 ParseVec3(const std::string &line);
 	glm::vec2 ParseVec2(const std::string &line);
 	void ParseFace(const std::string &line,

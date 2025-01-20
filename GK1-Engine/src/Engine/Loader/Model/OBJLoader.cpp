@@ -20,12 +20,12 @@ std::shared_ptr<Model> OBJLoader::Load(const std::string &filePath) {
 
 	// Create mesh components for each mesh in the data
 	for (const auto &meshData : objData.meshes) {
-		Model::MeshComponent component;
-		component.mesh = std::make_shared<Mesh>(meshData.vertices, meshData.indices);
-		component.material = meshData.material ? meshData.material : std::make_shared<Material>();
-		component.name = meshData.name;
+		Mesh mesh;
+		mesh.geometry = std::make_shared<Geometry>(meshData.vertices, meshData.indices);
+		mesh.material = meshData.material ? meshData.material : std::make_shared<Material>();
+		mesh.SetName(meshData.name);
 
-		model->AddMeshComponent(component);
+		model->AddMesh(mesh);
 	}
 
 	return model;
@@ -154,7 +154,7 @@ OBJLoader::MeshData OBJLoader::ProcessMeshData(
 
 	// Process all face vertices
 	for (size_t i = 0; i < tempMesh.vertexIndices.size(); i++) {
-		Mesh::Vertex vertex;
+		Geometry::Vertex vertex;
 
 		// Get the indices
 		uint32_t posIndex = tempMesh.vertexIndices[i];
@@ -187,13 +187,13 @@ OBJLoader::MeshData OBJLoader::ProcessMeshData(
 	return meshData;
 }
 
-void OBJLoader::CalculateTangents(std::vector<Mesh::Vertex> &vertices, const std::vector<uint32_t> &indices)
+void OBJLoader::CalculateTangents(std::vector<Geometry::Vertex> &vertices, const std::vector<uint32_t> &indices)
 {
 	for (size_t i = 0; i < indices.size(); i += 3)
 	{
-		Mesh::Vertex &v0 = vertices[indices[i]];
-		Mesh::Vertex &v1 = vertices[indices[i + 1]];
-		Mesh::Vertex &v2 = vertices[indices[i + 2]];
+		Geometry::Vertex &v0 = vertices[indices[i]];
+		Geometry::Vertex &v1 = vertices[indices[i + 1]];
+		Geometry::Vertex &v2 = vertices[indices[i + 2]];
 
 		glm::vec3 edge1 = v1.position - v0.position;
 		glm::vec3 edge2 = v2.position - v0.position;

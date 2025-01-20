@@ -57,12 +57,12 @@ void Camera::SetPerspective(float fov, float aspect, float nearPlane, float farP
 	m_projectionChanged = true;
 }
 
-void Camera::SetOrthographic(float left, float right, float bottom, float top, float nearPlane, float farPlane)
+void Camera::SetOrthographic(float size, float nearPlane, float farPlane)
 {
 	m_Type = ProjectionType::Orthographic;
+	m_orthoSize = size;
 	m_nearPlane = nearPlane;
 	m_farPlane = farPlane;
-	m_projectionMatrix = glm::ortho(left, right, bottom, top, nearPlane, farPlane);
 	m_projectionChanged = true;
 }
 
@@ -72,15 +72,27 @@ void Camera::SetFov(float fov)
 	m_projectionChanged = true;
 }
 
-void Camera::SetAspectRatio(float aspect)
+void Camera::SetViewportSize(uint32_t width, uint32_t height)
 {
-	m_aspectRatio = aspect;
+	m_aspectRatio = (float)width / height;
 	m_projectionChanged = true;
+}
+
+void Camera::SetPosition(const glm::vec3 &position)
+{
+	Transform::SetPosition(position);
+	m_viewChanged = true;
 }
 
 void Camera::Move(const glm::vec3 &offset)
 {
 	Transform::Move(offset);
+	m_viewChanged = true;
+}
+
+void Camera::SetRotation(const glm::vec3 &rotation)
+{
+	Transform::SetRotation(rotation);
 	m_viewChanged = true;
 }
 
@@ -112,7 +124,18 @@ glm::mat4 Camera::GetProjectionMatrix() const
 {
 	if (m_projectionChanged)
 	{
-		m_projectionMatrix = glm::perspective(glm::radians(m_fieldOfView), m_aspectRatio, m_nearPlane, m_farPlane);
+		if (m_Type == ProjectionType::Perspective)
+		{
+			m_projectionMatrix = glm::perspective(glm::radians(m_fieldOfView), m_aspectRatio, m_nearPlane, m_farPlane);
+		}
+		else if (m_Type == ProjectionType::Orthographic)
+		{
+			float orthoLeft = -m_orthoSize * m_aspectRatio * 0.5f;
+			float orthoRight = m_orthoSize * m_aspectRatio * 0.5f;
+			float orthoBottom = -m_orthoSize * 0.5f;
+			float orthoTop = m_orthoSize * 0.5f;
+			m_projectionMatrix = glm::ortho(orthoLeft, orthoRight, orthoBottom, orthoTop, m_nearPlane, m_farPlane);
+		}
 		m_projectionChanged = false;
 	}
 	return m_projectionMatrix;

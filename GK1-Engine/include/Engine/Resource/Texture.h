@@ -22,11 +22,16 @@ public:
 	~Texture();
 
 	static std::shared_ptr<Texture> LoadFromFile(const std::string &path, TextureType type = TextureType::Diffuse, bool generateMipMaps = true);
-	static std::shared_ptr<Texture> LoadFromData(const unsigned char *data, int width, int height, int channels, TextureType type = TextureType::Diffuse, bool generateMipMaps = true);
+	static std::shared_ptr<Texture> LoadFromData(const uint8_t *data, int width, int height, int channels, TextureType type = TextureType::Diffuse, bool generateMipMaps = true);
 	static std::shared_ptr<Texture> CreateCubemap(const std::vector<std::string> &faces);
 
 	void Bind(unsigned int slot = 0) const;
 	void Unbind() const;
+
+	uint8_t *GetData() const
+	{
+		return m_data;
+	}
 
 	GLuint GetID() const
 	{
@@ -51,6 +56,7 @@ public:
 
 private:
 	GLuint m_textureID;
+	uint8_t *m_data;
 	int m_width;
 	int m_height;
 	int m_channels;

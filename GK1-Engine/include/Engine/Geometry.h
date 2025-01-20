@@ -5,7 +5,7 @@
 #include <glad/gl.h>
 #include <vector>
 
-class Mesh : public Resource, public GraphicsObject {
+class Geometry  {
 public:
 
 	struct Vertex {
@@ -16,12 +16,11 @@ public:
 		glm::vec3 bitangent;
 	};
 
-	Mesh();
-	explicit Mesh(const std::vector<Vertex> &vertices, const std::vector<uint32_t> &indices);
-	~Mesh();
+	Geometry();
+	explicit Geometry(const std::vector<Vertex> &vertices, const std::vector<uint32_t> &indices);
+	~Geometry();
 
 	void SetData(const std::vector<Vertex> &vertices, const std::vector<uint32_t> &indices);
-	void Draw() override;
 
 	GLuint GetVAO() const { return m_vao; }
 	GLuint GetVBO() const { return m_vbo; }
@@ -31,7 +30,7 @@ public:
 
 protected:
 	virtual void Cleanup();
-	virtual void SetupMesh();
+	virtual void SetupGeometry();
 
 	std::vector<Vertex> m_vertices;
 	std::vector<uint32_t> m_indices;

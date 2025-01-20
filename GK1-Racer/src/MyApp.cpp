@@ -3,23 +3,28 @@
 #include <Engine/Objects/Skybox.h>
 #include <Engine/Objects/Model.h>
 #include <Engine/Objects/Camera.h>
+#include <Engine/Objects/Terrain.h>
 #include <Engine/ResourceManager.h>
 #include <Engine/Log.h>
 #include <Engine/Renderer.h>
 #include <Engine/Input.h>
+#include <Engine/Scene.h>
 #include <format>
 
 #include "Config.h"
 
-static std::vector<std::shared_ptr<GraphicsObject>> objects;
+static Scene scene;
 static std::shared_ptr<Skybox> skybox;
-static Camera camera;
+static std::shared_ptr<Model> model1;
+static std::shared_ptr<Model> model2;
 
 static glm::vec3 cubeRot = glm::vec3(0.0f);
+static glm::vec3 cubePos = glm::vec3(0.0f);
 
 MyApp::MyApp(std::string title, int width, int height)
 	: App(title, width, height)
 {
+	SetVSync(false);
 }
 
 MyApp::~MyApp()
@@ -42,19 +47,35 @@ void MyApp::OnStart()
 		}
 	);
 	auto shader = Shader::LoadFromFile("assets/shaders/skybox.vert", "assets/shaders/skybox.frag");
+	unsigned int uniformBlockIndex = glGetUniformBlockIndex(shader->GetID(), "Matrices");
+	glUniformBlockBinding(shader->GetID(), uniformBlockIndex, 0);
 	skybox->SetShader(shader);
 
-	auto &rm = ResourceManager::GetInstance();
-	rm.Add("Skybox", shader);
-
 	// Set camera properties
-	camera.SetPosition(glm::vec3(0.0f, 0.0f, 0.0f));
-	camera.LookAt(glm::vec3(1.0f, 0.0f, 0.0f));
-	camera.SetPerspective(45.0f, (float)Config::WINDOW_WIDTH / Config::WINDOW_HEIGHT, 0.1f, 100.0f);
+	auto camera = std::make_shared<Camera>();
+	camera->SetPosition(glm::vec3(0.0f, 0.0f, 0.0f));
+	camera->LookAt(glm::vec3(1.0f, 0.0f, 0.0f));
+	camera->SetPerspective(45.0f, (float)Config::WINDOW_WIDTH / Config::WINDOW_HEIGHT, 0.1f, 2000.0f);
+	scene.SetCamera(camera);
 
-	auto model = Model::LoadFromFile("assets/models/test/untitled.obj");
-	model->SetPosition(glm::vec3(5.0f, 0.0f, 0.0f));
-	objects.push_back(model);
+	model1 = Model::LoadFromFile("assets/models/test/untitled.obj");
+	model1->SetPosition(glm::vec3(5.0f, 0.0f, 0.0f));
+	auto node1 = scene.AddObject(model1);
+
+	model2 = Model::LoadFromFile("assets/models/test/untitled.obj");
+	model2->SetPosition(glm::vec3(0.0f, 5.0f, 0.0f));
+	model2->SetScale(glm::vec3(0.5f));
+	scene.AddObject(model2, node1.get());
+
+	//auto heightmap = Texture::LoadFromFile("assets/textures/terrain/terrain_height.png", Texture::TextureType::Height, false);
+	//auto terrain = Terrain::CreateFromHeightmap(heightmap);
+	//auto material = std::make_shared<Material>();
+	//terrain->SetMaterial(material);
+	//terrain->SetWorldScale(2.0f);
+	//terrain->SetHeightScale(150.0f);
+	//terrain->SetPosition({ 0.0f, -10.0f, 0.0f });
+
+	//scene.AddObject(terrain);
 }
 
 void MyApp::OnUpdate(float deltaTime)
@@ -62,31 +83,37 @@ void MyApp::OnUpdate(float deltaTime)
 	if (Input::IsKeyPressed(GLFW_KEY_ESCAPE))
 		Close();
 
-	cubeRot.y += 25.0f * deltaTime;
-	cubeRot.x += 25.0f * deltaTime;
+	auto camera = scene.GetCamera();
 
-	glm::vec3 forward = camera.GetForward();
-	glm::vec3 right = camera.GetRight();
-	glm::vec3 up = camera.GetUp();
+	// Cube pos and rot
+	cubePos.x = 5.0f * (float)glm::sin(glfwGetTime());
+	cubePos.z = 5.0f * (float)glm::cos(glfwGetTime());
+	cubePos.y = 0.0f;
+	cubeRot.y += 50.0f * deltaTime;
+	cubeRot.x += 50.0f * deltaTime;
+
+	glm::vec3 forward = camera->GetForward();
+	glm::vec3 right = camera->GetRight();
+	glm::vec3 up = camera->GetUp();
 
 	// Camera movement
-	glm::vec3 cameraSpeed = glm::vec3(2.5f * deltaTime);
+	glm::vec3 cameraSpeed = glm::vec3(5.0f * deltaTime);
 	if (Input::IsKeyDown(GLFW_KEY_LEFT_SHIFT))
 		cameraSpeed *= 2.0f;
 	if (Input::IsKeyDown(GLFW_KEY_LEFT_CONTROL))
 		cameraSpeed *= 0.5f;
 	if (Input::IsKeyDown(GLFW_KEY_W))
-		camera.Move(forward * cameraSpeed);
+		camera->Move(forward * cameraSpeed);
 	if (Input::IsKeyDown(GLFW_KEY_S))
-		camera.Move(-forward * cameraSpeed);
+		camera->Move(-forward * cameraSpeed);
 	if (Input::IsKeyDown(GLFW_KEY_A))
-		camera.Move(-right * cameraSpeed);
+		camera->Move(-right * cameraSpeed);
 	if (Input::IsKeyDown(GLFW_KEY_D))
-		camera.Move(right * cameraSpeed);
+		camera->Move(right * cameraSpeed);
 	if (Input::IsKeyDown(GLFW_KEY_Q))
-		camera.Move(-up * cameraSpeed);
+		camera->Move(-up * cameraSpeed);
 	if (Input::IsKeyDown(GLFW_KEY_E))
-		camera.Move(up * cameraSpeed);
+		camera->Move(up * cameraSpeed);
 
 	if (Input::IsKeyPressed(GLFW_KEY_TAB))
 	{
@@ -103,40 +130,24 @@ void MyApp::OnUpdate(float deltaTime)
 		float sensitivity = 0.1f;
 		mouseDelta *= sensitivity;
 
-		camera.Rotate(glm::vec3(-mouseDelta.y, -mouseDelta.x, 0.0f));
+		camera->Rotate(glm::vec3(-mouseDelta.y, -mouseDelta.x, 0.0f));
 	}
 }
 
 void MyApp::OnRender(Renderer *renderer)
 {
 	renderer->Clear(Config::CLEAR_COLOR);
-	auto shader = ResourceManager::GetInstance().Get<Shader>("Skybox");
-	glm::mat4 view = glm::mat4(glm::mat3(camera.GetViewMatrix()));
-	shader->Use();
-	shader->SetMat4("view", view);
-	shader->SetMat4("projection", camera.GetProjectionMatrix());
+	model1->SetRotation(cubeRot);
+	model1->SetPosition(cubePos);
+	model2->SetRotation(glm::vec3(2.0f) * cubeRot);
+
+	scene.Draw(renderer);
 	skybox->Draw();
-	for (const auto &obj : objects)
-	{
-		obj->SetRotation(cubeRot);
-		auto meshes = std::dynamic_pointer_cast<Model>(obj)->GetMeshes();
-		for (const auto &mesh : meshes)
-		{
-			auto shader = mesh->material->GetShader();
-			shader->Use();
-			shader->SetMat4("model", obj->GetModelMatrix());
-			shader->SetMat4("view", camera.GetViewMatrix());
-			shader->SetMat4("projection", camera.GetProjectionMatrix());
-		}
-		obj->Draw();
-	}
 }
 
 void MyApp::OnImGuiRender()
 {
 	ImGuiIO &io = ImGui::GetIO(); (void)io;
-
-	ImGui::ShowDemoWindow();
 
 	ImGui::SetNextWindowSize(ImVec2(448.0, 0.0), ImGuiCond_Once);
 	ImGui::SetNextWindowCollapsed(false, ImGuiCond_Once);
@@ -149,5 +160,5 @@ void MyApp::OnImGuiRender()
 
 void MyApp::OnResize(int width, int height)
 {
-	camera.SetAspectRatio((float)width / height);
+	scene.GetCamera()->SetViewportSize(width, height);
 }

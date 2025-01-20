@@ -37,34 +37,29 @@ std::shared_ptr<Model> Model::LoadFromFile(const std::string &path)
 
 void Model::Draw()
 {
-	for (const auto &meshComponent : m_meshes)
+	for (const auto &mesh : m_meshes)
 	{
-		if (meshComponent->material)
+		auto shader = mesh->GetMaterial()->GetShader();
+		if (shader)
 		{
-			meshComponent->material->Bind();
+			shader->Use();
+			shader->SetMat4("model", GetWorldMatrix() * mesh->GetModelMatrix());
 		}
-		if (meshComponent->mesh)
-		{
-			meshComponent->mesh->Draw();
-		}
-		if (meshComponent->material)
-		{
-			meshComponent->material->Unbind();
-		}
+		mesh->Draw();
 	}
 }
 
-void Model::AddMeshComponent(const MeshComponent &component)
+void Model::AddMesh(const Mesh &mesh)
 {
-	m_meshes.push_back(std::make_shared<MeshComponent>(component));
+	m_meshes.push_back(std::make_shared<Mesh>(mesh));
 }
 
-std::shared_ptr<Model::MeshComponent> Model::GetMeshComponent(const std::string &name) const
+std::shared_ptr<Mesh> Model::GetMesh(const std::string &name) const
 {
 	auto it = std::find_if(m_meshes.begin(), m_meshes.end(),
-		[&name](std::shared_ptr<MeshComponent> entry)
+		[&name](std::shared_ptr<Mesh> entry)
 		{
-			return entry->name == name;
+			return entry->GetName() == name;
 		}
 	);
 

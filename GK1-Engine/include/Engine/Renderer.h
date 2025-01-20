@@ -1,24 +1,36 @@
 #pragma once
 #include <glm/glm.hpp>
 #include <glad/gl.h>
-#include "Window.h"
+
+#include <memory>
+
+#include "Engine/Window.h"
+#include "Engine/Objects/Camera.h"
 
 class Renderer
 {
 public:
+
+	struct RenderState
+	{
+		glm::vec4 clearColor;
+		glm::vec3 ambientColor;
+		// std::shared_ptr<Scene> scene;
+		std::shared_ptr<Camera> camera;
+	};
+
 	Renderer(Window *window);
 	Renderer() = default;
 	~Renderer();
 
-	static unsigned int LoadShader(const char *vertexShaderSource, const char *fragmentShaderSource);
-	static unsigned int LoadShaderFromFile(const char *vertexShaderFilepath, const char *fragmentShaderFilepath);
-	static void UnloadShader(unsigned int shaderProgram);
 	void Clear(glm::vec4 color);
-
+	GLuint GetDepthBuffer() const { return m_DepthBuffer; }
+	GLuint GetUBO() const { return m_ubo; }
 	static glm::vec2 GetViewportSize();
 
 private:
 	static Window *m_Window;
 	GLuint m_DepthBuffer;
+	GLuint m_ubo;
 };
 

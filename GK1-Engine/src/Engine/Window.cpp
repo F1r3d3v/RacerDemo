@@ -37,6 +37,7 @@ int Window::GetHeight() const
 
 void Window::SetTitle(const std::string &title)
 {
+	m_Title = title;
 	glfwSetWindowTitle(m_Handle, title.c_str());
 }
 

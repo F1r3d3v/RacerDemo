@@ -32,9 +32,12 @@ protected:
 
 private:
 	void Initialize();
+	void FPSCounter(float deltaTime);
 
 	bool m_IsVsync = true;
 	Window *m_Window;
 	Renderer *m_Renderer;
+
+	int frameCount = 0;
 };
 

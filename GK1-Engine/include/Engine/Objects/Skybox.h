@@ -19,7 +19,7 @@ public:
 	std::shared_ptr<Texture> GetCubemap() const { return m_cubemap; }
 
 private:
-	void SetupMesh();
+	void SetupGeometry();
 	void Cleanup();
 
 	GLuint m_vao;

@@ -1,21 +1,21 @@
-#include "Engine/Resource/Mesh.h"
+#include "Engine/Geometry.h"
 #include <iostream>
 
-Mesh::Mesh() : m_vao(0), m_vbo(0), m_ebo(0), m_vertexCount(0), m_indexCount(0)
+Geometry::Geometry() : m_vao(0), m_vbo(0), m_ebo(0), m_vertexCount(0), m_indexCount(0)
 {
 }
 
-Mesh::Mesh(const std::vector<Vertex> &vertices, const std::vector<uint32_t> &indices) : Mesh()
+Geometry::Geometry(const std::vector<Vertex> &vertices, const std::vector<uint32_t> &indices) : Geometry()
 {
 	SetData(vertices, indices);
 }
 
-Mesh::~Mesh()
+Geometry::~Geometry()
 {
 	Cleanup();
 }
 
-void Mesh::Cleanup()
+void Geometry::Cleanup()
 {
 	if (m_ebo != 0)
 	{
@@ -34,7 +34,7 @@ void Mesh::Cleanup()
 	}
 }
 
-void Mesh::SetData(const std::vector<Vertex> &vertices, const std::vector<uint32_t> &indices)
+void Geometry::SetData(const std::vector<Vertex> &vertices, const std::vector<uint32_t> &indices)
 {
 	Cleanup();
 
@@ -43,10 +43,10 @@ void Mesh::SetData(const std::vector<Vertex> &vertices, const std::vector<uint32
 	m_vertexCount = vertices.size();
 	m_indexCount = indices.size();
 
-	SetupMesh();
+	SetupGeometry();
 }
 
-void Mesh::SetupMesh()
+void Geometry::SetupGeometry()
 {
 	// Create buffers/arrays
 	glGenVertexArrays(1, &m_vao);
@@ -91,12 +91,5 @@ void Mesh::SetupMesh()
 	glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
 						  (void *)offsetof(Vertex, bitangent));
 
-	glBindVertexArray(0);
-}
-
-void Mesh::Draw()
-{
-	glBindVertexArray(m_vao);
-	glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(m_indexCount), GL_UNSIGNED_INT, 0);
 	glBindVertexArray(0);
 }

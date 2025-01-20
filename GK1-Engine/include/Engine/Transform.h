@@ -10,17 +10,19 @@ public:
 
 	virtual void SetPosition(const glm::vec3 &position);
 	virtual void Move(const glm::vec3 &offset);
-	virtual glm::vec3 GetPosition() const;
+	glm::vec3 GetPosition() const;
 
 	virtual void SetRotation(const glm::vec3 &rotation);
 	virtual void Rotate(const glm::vec3 &angles);
-	virtual glm::vec3 GetRotation() const;
+	glm::vec3 GetRotation() const;
 
 	virtual void SetScale(const glm::vec3 &scale);
 	virtual void Scale(const glm::vec3 &factor);
-	virtual glm::vec3 GetScale() const;
+	glm::vec3 GetScale() const;
 
-	virtual glm::mat4 GetModelMatrix() const;
+	glm::mat4 GetModelMatrix() const;
+	glm::mat4 GetWorldMatrix() const;
+	void SetWorldMatrix(const glm::mat4 &matrix);
 
 	glm::vec3 GetForward() const;
 	glm::vec3 GetRight() const;
@@ -37,6 +39,7 @@ protected:
 	glm::vec3 m_right;
 	glm::vec3 m_up;
 
+	glm::mat4 m_worldMatrix;
 	mutable glm::mat4 m_modelMatrix;
 	mutable bool m_transformChanged;
 };

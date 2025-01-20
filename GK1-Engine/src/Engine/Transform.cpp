@@ -13,6 +13,7 @@ Transform::Transform()
 	, m_right(1.0f, 0.0f, 0.0f)
 	, m_up(0.0f, 1.0f, 0.0f)
 	, m_modelMatrix(1.0f)
+	, m_worldMatrix(1.0f)
 	, m_transformChanged(true)
 {
 }
@@ -99,6 +100,16 @@ glm::mat4 Transform::GetModelMatrix() const
 		m_transformChanged = false;
 	}
 	return m_modelMatrix;
+}
+
+glm::mat4 Transform::GetWorldMatrix() const
+{
+	return m_worldMatrix;
+}
+
+void Transform::SetWorldMatrix(const glm::mat4 &matrix)
+{
+	m_worldMatrix = matrix;
 }
 
 glm::vec3 Transform::GetForward() const

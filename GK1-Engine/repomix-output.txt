@@ -1,0 +1,535 @@
+================
+File: include/Engine/Geometry.h
+================
+#pragma once
+#include "Engine/Resource/Resource.h"
+#include "Engine/Objects/GraphicsObject.h"
+#include <glm/glm.hpp>
+#include <glad/gl.h>
+#include <vector>
+
+class Geometry  {
+public:
+
+	struct Vertex {
+		glm::vec3 position;
+		glm::vec3 normal;
+		glm::vec2 texCoords;
+		glm::vec3 tangent;
+		glm::vec3 bitangent;
+	};
+
+	Geometry();
+	explicit Geometry(const std::vector<Vertex> &vertices, const std::vector<uint32_t> &indices);
+	~Geometry();
+
+	void SetData(const std::vector<Vertex> &vertices, const std::vector<uint32_t> &indices);
+
+	GLuint GetVAO() const { return m_vao; }
+	GLuint GetVBO() const { return m_vbo; }
+	GLuint GetEBO() const { return m_ebo; }
+	size_t GetVertexCount() const { return m_vertexCount; }
+	size_t GetIndexCount() const { return m_indexCount; }
+
+protected:
+	virtual void Cleanup();
+	virtual void SetupGeometry();
+
+	std::vector<Vertex> m_vertices;
+	std::vector<uint32_t> m_indices;
+	GLuint m_vao;
+	GLuint m_vbo;
+	GLuint m_ebo;
+	size_t m_vertexCount;
+	size_t m_indexCount;
+};
+
+================
+File: include/Engine/Objects/Camera.h
+================
+#pragma once
+
+#include "Engine/Transform.h"
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+
+class Camera : public Transform {
+public:
+
+	enum class ProjectionType {
+		None,
+		Perspective,
+		Orthographic
+	};
+
+	Camera();
+	virtual ~Camera() override;
+
+	void LookAt(const glm::vec3 &target, const glm::vec3 &up = glm::vec3(0.0f, 1.0f, 0.0f));
+
+	void SetPerspective(float fov, float aspect, float nearPlane, float farPlane);
+	void SetOrthographic(float size, float nearPlane, float farPlane);
+	void SetFov(float fov);
+	void SetViewportSize(uint32_t width, uint32_t height);
+
+
+	void SetPosition(const glm::vec3 &position) override;
+	void Move(const glm::vec3 &offset) override;
+	void SetRotation(const glm::vec3 &rotation) override;
+	void Rotate(const glm::vec3 &angles) override;
+
+	ProjectionType GetProjectionType() const;
+	float GetFov() const;
+	float GetNearPlane() const;
+	float GetFarPlane() const;
+	glm::mat4 GetViewMatrix() const;
+	glm::mat4 GetProjectionMatrix() const;
+
+protected:
+	virtual void UpdateState() override;
+
+private:
+	float m_fieldOfView;
+	float m_aspectRatio;
+	float m_nearPlane;
+	float m_farPlane;
+	float m_orthoSize;
+	ProjectionType m_Type;
+
+	mutable glm::mat4 m_viewMatrix;
+	mutable glm::mat4 m_projectionMatrix;
+	mutable bool m_viewChanged;
+	mutable bool m_projectionChanged;
+};
+
+================
+File: include/Engine/Objects/GraphicsObject.h
+================
+#pragma once
+#include "Engine/Transform.h"
+
+class GraphicsObject : public Transform
+{
+public:
+	virtual ~GraphicsObject() = default;
+	virtual void Draw() = 0;
+};
+
+================
+File: include/Engine/Objects/Mesh.h
+================
+#pragma once
+#include "Engine/Geometry.h"
+#include "Engine/Resource/Material.h"
+#include <string>
+#include <memory>
+
+class Mesh : public Resource, public GraphicsObject
+{
+public:
+	std::shared_ptr<Geometry> geometry;
+	std::shared_ptr<Material> material;
+
+	Mesh();
+	Mesh(std::shared_ptr<Geometry> geometry, std::shared_ptr<Material> material);
+	~Mesh();
+
+	void Draw() override;
+
+	std::shared_ptr<Geometry> GetGeometry() const { return geometry; }
+	std::shared_ptr<Material> GetMaterial() const { return material; }
+	void SetGeometry(std::shared_ptr<Geometry> geometry) { this->geometry = geometry; }
+	void SetMaterial(std::shared_ptr<Material> material) { this->material = material; }
+
+};
+
+================
+File: include/Engine/Objects/Model.h
+================
+#pragma once
+#include "Engine/Resource/Resource.h"
+#include "Engine/Objects/Mesh.h"
+#include "Engine/Resource/Material.h"
+#include "Engine/Objects/GraphicsObject.h"
+#include <memory>
+#include <vector>
+
+class Model : public GraphicsObject {
+public:
+
+	Model();
+	~Model() override;
+
+	static std::shared_ptr<Model> LoadFromFile(const std::string &path);
+	void Draw() override;
+
+	void AddMesh(const Mesh &entry);
+	const std::vector<std::shared_ptr<Mesh>> &GetMeshes() const { return m_meshes; }
+	std::shared_ptr<Mesh> GetMesh(const std::string &name) const;
+
+private:
+	std::vector<std::shared_ptr<Mesh>> m_meshes;
+};
+
+================
+File: include/Engine/Objects/SceneNode.h
+================
+#pragma once
+#include "Engine/Objects/GraphicsObject.h"
+#include "Engine/Objects/Camera.h"
+#include <memory>
+#include <string>
+#include <vector>
+#include <unordered_map>
+
+class SceneNode {
+public:
+	SceneNode() = default;
+	SceneNode(std::shared_ptr<GraphicsObject> obj);
+	virtual ~SceneNode() = default;
+
+	void AddChild(std::shared_ptr<SceneNode> child);
+
+	void RemoveChild(const std::shared_ptr<SceneNode> &child);
+
+	std::shared_ptr<GraphicsObject> GetObjects() const { return m_obj; }
+	SceneNode *GetParent() const { return m_parent; }
+	const std::vector<std::shared_ptr<SceneNode>> &GetChildren() const { return m_children; }
+
+	glm::mat4 GetWorldMatrix() const;
+
+	void Draw();
+
+protected:
+	SceneNode *m_parent;
+	std::shared_ptr<GraphicsObject> m_obj;
+	std::vector<std::shared_ptr<SceneNode>> m_children;
+};
+
+================
+File: include/Engine/Objects/Skybox.h
+================
+#pragma once
+#include "Engine/Resource/Texture.h"
+#include "Engine/Resource/Shader.h"
+#include "Engine/Objects/GraphicsObject.h"
+
+#include <memory>
+
+class Skybox : public GraphicsObject {
+public:
+	Skybox();
+	~Skybox();
+
+	static std::shared_ptr<Skybox> LoadFromCubemap(std::shared_ptr<Texture> cubemap);
+	static std::shared_ptr<Skybox> LoadFromFiles(const std::vector<std::string> &faces);
+	void Draw() override;
+
+	void SetShader(std::shared_ptr<Shader> shader) { m_shader = shader; }
+	void SetCubemap(std::shared_ptr<Texture> cubemap) { m_cubemap = cubemap; }
+	std::shared_ptr<Texture> GetCubemap() const { return m_cubemap; }
+
+private:
+	void SetupGeometry();
+	void Cleanup();
+
+	GLuint m_vao;
+	GLuint m_vbo;
+	std::shared_ptr<Texture> m_cubemap;
+	std::shared_ptr<Shader> m_shader;
+};
+
+================
+File: include/Engine/Renderer.h
+================
+#pragma once
+#include <glm/glm.hpp>
+#include <glad/gl.h>
+
+#include <memory>
+
+#include "Engine/Window.h"
+#include "Engine/Objects/Camera.h"
+
+class Renderer
+{
+public:
+
+	struct RenderState
+	{
+		glm::vec4 clearColor;
+		glm::vec3 ambientColor;
+		// std::shared_ptr<Scene> scene;
+		std::shared_ptr<Camera> camera;
+	};
+
+	Renderer(Window *window);
+	Renderer() = default;
+	~Renderer();
+
+	void Clear(glm::vec4 color);
+	GLuint GetDepthBuffer() const { return m_DepthBuffer; }
+	GLuint GetUBO() const { return m_ubo; }
+	static glm::vec2 GetViewportSize();
+
+private:
+	static Window *m_Window;
+	GLuint m_DepthBuffer;
+	GLuint m_ubo;
+};
+
+================
+File: include/Engine/Resource/Material.h
+================
+#pragma once
+#include "Engine/Resource/Resource.h"
+#include "Engine/Resource/Shader.h"
+#include "Engine/Resource/Texture.h"
+#include <memory>
+#include <unordered_map>
+
+class Material : public Resource {
+public:
+
+	struct Properties {
+		glm::vec3 ambient{ 1.0f };
+		glm::vec3 diffuse{ 1.0f };
+		glm::vec3 specular{ 1.0f };
+		float shininess{ 32.0f };
+	};
+
+	Material();
+	explicit Material(std::shared_ptr<Shader> shader);
+	~Material();
+
+	void SetShader(std::shared_ptr<Shader> shader);
+	void SetTextures(Texture::TextureType type, std::vector<std::shared_ptr<Texture>> textures);
+	void AddTexture(Texture::TextureType type, std::shared_ptr<Texture> texture);
+	void SetProperties(const Properties &props);
+
+	void Bind() const;
+	void Unbind() const;
+
+	std::shared_ptr<Shader> GetShader() const { return m_shader; }
+	std::vector<std::shared_ptr<Texture>> GetTextures(Texture::TextureType type) const;
+	const Properties &GetProperties() const { return m_properties; }
+
+private:
+	std::shared_ptr<Shader> m_shader;
+	std::unordered_map<Texture::TextureType, std::vector<std::shared_ptr<Texture>>> m_textures;
+	Properties m_properties;
+};
+
+================
+File: include/Engine/Resource/Resource.h
+================
+#pragma once
+#include <string>
+
+class Resource {
+public:
+	Resource() = default;
+	virtual ~Resource() = default;
+
+	const std::string &GetName() const
+	{
+		return m_name;
+	}
+	void SetName(const std::string &name)
+	{
+		m_name = name;
+	}
+
+protected:
+	std::string m_name;
+};
+
+================
+File: include/Engine/Resource/Shader.h
+================
+#pragma once
+#include "Engine/Resource/Resource.h"
+#include <glad/gl.h>
+#include <glm/glm.hpp>
+#include <unordered_map>
+#include <memory>
+
+class Shader : public Resource {
+public:
+
+	enum class ShaderType {
+		Vertex,
+		Fragment
+	};
+
+	Shader();
+	~Shader();
+
+	static std::shared_ptr<Shader> LoadFromFile(const std::string &vertexPath, const std::string &fragmentPath);
+	static std::shared_ptr<Shader> LoadFromString(const std::string &vertexSrc, const std::string &fragmentSrc);
+
+	bool AddShaderStage(ShaderType type, const std::string &source);
+	bool Link();
+	void Use() const;
+
+	void SetBool(const std::string &name, bool value);
+	void SetInt(const std::string &name, int value);
+	void SetFloat(const std::string &name, float value);
+	void SetVec2(const std::string &name, const glm::vec2 &value);
+	void SetVec3(const std::string &name, const glm::vec3 &value);
+	void SetVec4(const std::string &name, const glm::vec4 &value);
+	void SetMat3(const std::string &name, const glm::mat3 &value);
+	void SetMat4(const std::string &name, const glm::mat4 &value);
+
+	GLuint GetID() const
+	{
+		return m_shaderProgram;
+	}
+
+private:
+	GLint GetUniformLocation(const std::string &name);
+
+	GLuint m_shaderProgram;
+	std::unordered_map<std::string, GLint> m_uniformLocations;
+};
+
+================
+File: include/Engine/Resource/Texture.h
+================
+#pragma once
+#include "Engine/Resource/Resource.h"
+#include <glad/gl.h>
+#include <memory>
+#include <string>
+#include <vector>
+
+class Texture : public Resource {
+public:
+
+	enum class TextureType {
+		Ambient,
+		Diffuse,
+		Specular,
+		Shininess,
+		Normal,
+		Height,
+		Cubemap
+	};
+
+	Texture();
+	~Texture();
+
+	static std::shared_ptr<Texture> LoadFromFile(const std::string &path, TextureType type = TextureType::Diffuse, bool generateMipMaps = true);
+	static std::shared_ptr<Texture> LoadFromData(const unsigned char *data, int width, int height, int channels, TextureType type = TextureType::Diffuse, bool generateMipMaps = true);
+	static std::shared_ptr<Texture> CreateCubemap(const std::vector<std::string> &faces);
+
+	void Bind(unsigned int slot = 0) const;
+	void Unbind() const;
+
+	GLuint GetID() const
+	{
+		return m_textureID;
+	}
+	int GetWidth() const
+	{
+		return m_width;
+	}
+	int GetHeight() const
+	{
+		return m_height;
+	}
+	TextureType GetType() const
+	{
+		return m_type;
+	}
+	void SetType(TextureType type)
+	{
+		m_type = type;
+	}
+
+private:
+	GLuint m_textureID;
+	int m_width;
+	int m_height;
+	int m_channels;
+	TextureType m_type;
+	GLenum m_format;
+	GLenum m_internalFormat;
+};
+
+================
+File: include/Engine/Scene.h
+================
+#pragma once
+#include "Engine/Renderer.h"
+#include "Engine/Objects/SceneNode.h"
+#include "Engine/Objects/Camera.h"
+
+#include <memory>
+#include <glad/gl.h>
+
+class Scene {
+public:
+	Scene();
+	~Scene() = default;
+
+	void SetCamera(std::shared_ptr<Camera> camera);
+	std::shared_ptr<Camera> GetCamera() const;
+	std::shared_ptr<SceneNode> GetRoot() const;
+	std::shared_ptr<SceneNode> AddObject(std::shared_ptr<GraphicsObject> obj, SceneNode *parent = nullptr);
+
+	void Draw(Renderer *renderer);
+
+private:
+	std::shared_ptr<SceneNode> m_root;
+	std::shared_ptr<Camera> m_camera;
+};
+
+================
+File: include/Engine/Transform.h
+================
+#pragma once
+
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+
+class Transform {
+public:
+	Transform();
+	virtual ~Transform();
+
+	virtual void SetPosition(const glm::vec3 &position);
+	virtual void Move(const glm::vec3 &offset);
+	glm::vec3 GetPosition() const;
+
+	virtual void SetRotation(const glm::vec3 &rotation);
+	virtual void Rotate(const glm::vec3 &angles);
+	glm::vec3 GetRotation() const;
+
+	virtual void SetScale(const glm::vec3 &scale);
+	virtual void Scale(const glm::vec3 &factor);
+	glm::vec3 GetScale() const;
+
+	glm::mat4 GetModelMatrix() const;
+	glm::mat4 GetWorldMatrix() const;
+	void SetWorldMatrix(const glm::mat4 &matrix);
+
+	glm::vec3 GetForward() const;
+	glm::vec3 GetRight() const;
+	glm::vec3 GetUp() const;
+
+protected:
+	virtual void UpdateState();
+
+	glm::vec3 m_position;
+	glm::vec3 m_rotation;
+	glm::vec3 m_scale;
+
+	glm::vec3 m_forward;
+	glm::vec3 m_right;
+	glm::vec3 m_up;
+
+	glm::mat4 m_worldMatrix;
+	mutable glm::mat4 m_modelMatrix;
+	mutable bool m_transformChanged;
+};

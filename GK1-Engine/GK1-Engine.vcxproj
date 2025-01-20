@@ -122,15 +122,19 @@
     <ClInclude Include="include\Engine\Loader\Model\ModelLoader.h" />
     <ClInclude Include="include\Engine\Loader\Model\OBJLoader.h" />
     <ClInclude Include="include\Engine\Log.h" />
+    <ClInclude Include="include\Engine\Objects\Mesh.h" />
+    <ClInclude Include="include\Engine\Objects\SceneNode.h" />
+    <ClInclude Include="include\Engine\Objects\Terrain.h" />
     <ClInclude Include="include\Engine\Renderer.h" />
     <ClInclude Include="include\Engine\ResourceManager.h" />
     <ClInclude Include="include\Engine\Resource\Material.h" />
-    <ClInclude Include="include\Engine\Resource\Mesh.h" />
+    <ClInclude Include="include\Engine\Geometry.h" />
     <ClInclude Include="include\Engine\Objects\Model.h" />
     <ClInclude Include="include\Engine\Resource\Resource.h" />
     <ClInclude Include="include\Engine\Resource\Shader.h" />
     <ClInclude Include="include\Engine\Objects\Skybox.h" />
     <ClInclude Include="include\Engine\Resource\Texture.h" />
+    <ClInclude Include="include\Engine\Scene.h" />
     <ClInclude Include="include\Engine\Transform.h" />
     <ClInclude Include="include\Engine\Window.h" />
   </ItemGroup>
@@ -143,14 +147,18 @@
     <ClCompile Include="src\Engine\InstancedObject.cpp" />
     <ClCompile Include="src\Engine\Loader\Model\OBJLoader.cpp" />
     <ClCompile Include="src\Engine\Log.cpp" />
+    <ClCompile Include="src\Engine\Objects\Mesh.cpp" />
+    <ClCompile Include="src\Engine\Objects\SceneNode.cpp" />
+    <ClCompile Include="src\Engine\Objects\Terrain.cpp" />
     <ClCompile Include="src\Engine\Renderer.cpp" />
     <ClCompile Include="src\Engine\ResourceManager.cpp" />
     <ClCompile Include="src\Engine\Resource\Material.cpp" />
-    <ClCompile Include="src\Engine\Resource\Mesh.cpp" />
+    <ClCompile Include="src\Engine\Geometry.cpp" />
     <ClCompile Include="src\Engine\Objects\Model.cpp" />
     <ClCompile Include="src\Engine\Resource\Shader.cpp" />
     <ClCompile Include="src\Engine\Objects\Skybox.cpp" />
     <ClCompile Include="src\Engine\Resource\Texture.cpp" />
+    <ClCompile Include="src\Engine\Scene.cpp" />
     <ClCompile Include="src\Engine\Transform.cpp" />
     <ClCompile Include="src\Engine\Window.cpp" />
   </ItemGroup>

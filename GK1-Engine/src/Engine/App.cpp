@@ -115,6 +115,10 @@ void App::Run()
 		}
 
 		glfwSwapBuffers(m_Window->GetHandle());
+
+#ifdef _DEBUG
+		FPSCounter(deltaTime);
+#endif
 	}
 }
 
@@ -148,4 +152,17 @@ void App::Initialize()
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
 	LoaderManager::Initialize();
+}
+
+void App::FPSCounter(float deltaTime)
+{
+	frameCount++;
+	static float timer = 0.0f;
+	timer += deltaTime;
+	if (timer >= 1.0f)
+	{
+		glfwSetWindowTitle(m_Window->GetHandle(), (m_Window->GetTitle() + " - FPS: " + std::to_string(frameCount)).c_str());
+		frameCount = 0;
+		timer -= 1.0f;
+	}
 }

@@ -11,8 +11,11 @@ out vec3 Normal;
 out vec2 TexCoords;
 
 uniform mat4 model;
-uniform mat4 view;
-uniform mat4 projection;
+layout (std140) uniform Matrices
+{
+    mat4 view;
+    mat4 projection;
+};
 
 void main()
 {
@@ -48,7 +51,10 @@ void main()
 
 Material::Material() : m_properties{}
 {
-	SetShader(Shader::LoadFromString(kDefaultVertexShader, kDefaultFragmentShader));
+	auto shader = Shader::LoadFromString(kDefaultVertexShader, kDefaultFragmentShader);
+	unsigned int uniformBlockIndex = glGetUniformBlockIndex(shader->GetID(), "Matrices");
+	glUniformBlockBinding(shader->GetID(), uniformBlockIndex, 0);
+	SetShader(shader);
 }
 
 Material::Material(std::shared_ptr<Shader> shader) : Material()
