@@ -152,33 +152,81 @@ OBJLoader::MeshData OBJLoader::ProcessMeshData(
 	// Map to store unique vertices
 	std::unordered_map<std::string, uint32_t> uniqueVertices;
 
-	// Process all face vertices
-	for (size_t i = 0; i < tempMesh.vertexIndices.size(); i++) {
-		Geometry::Vertex vertex;
+	std::unordered_map<uint32_t, uint32_t> vertexCount;
 
-		// Get the indices
-		uint32_t posIndex = tempMesh.vertexIndices[i];
-		uint32_t uvIndex = tempMesh.uvIndices[i];
-		uint32_t normalIndex = tempMesh.normalIndices[i];
+	// Process all face vertices and build indices
+	for (size_t i = 0; i < tempMesh.vertexIndices.size(); i += 3)
+	{
+		uint32_t indices[3];
 
-		// Get the actual data
-		vertex.position = positions[posIndex];
-		vertex.texCoords = uvIndex < uvs.size() ? uvs[uvIndex] : glm::vec2(0.0f);
-		vertex.normal = normalIndex < normals.size() ? normals[normalIndex] : glm::vec3(0.0f, 1.0f, 0.0f);
+		// Process each vertex in the triangle
+		for (int j = 0; j < 3; ++j)
+		{
+			Geometry::Vertex vertex;
 
-		// Create a string key for the vertex
-		std::string key = std::to_string(posIndex) + "|" +
-			std::to_string(uvIndex) + "|" +
-			std::to_string(normalIndex);
+			// Get the indices
+			uint32_t posIndex = tempMesh.vertexIndices[i + j];
+			uint32_t uvIndex = tempMesh.uvIndices[i + j];
 
-		// Check if we've seen this vertex before
-		if (uniqueVertices.count(key) == 0) {
-			uniqueVertices[key] = static_cast<uint32_t>(meshData.vertices.size());
-			meshData.vertices.push_back(vertex);
+			// Get the position and texCoords
+			vertex.position = positions[posIndex];
+			vertex.texCoords = (uvIndex < uvs.size()) ? uvs[uvIndex] : glm::vec2(0.0f);
+			vertex.normal = glm::vec3(0.0f);
+
+			// Create a unique key for the vertex
+			std::string key = std::to_string(posIndex);
+
+			// Check if the vertex already exists
+			if (uniqueVertices.count(key) == 0)
+			{
+				uniqueVertices[key] = static_cast<uint32_t>(meshData.vertices.size());
+				meshData.vertices.push_back(vertex);
+			}
+
+			indices[j] = uniqueVertices[key];
+			meshData.indices.push_back(indices[j]);
 		}
 
-		// Add the index
-		meshData.indices.push_back(uniqueVertices[key]);
+		if (tempMesh.normalIndices.empty())
+		{
+			// Calculate the face normal
+			Geometry::Vertex &v0 = meshData.vertices[indices[0]];
+			Geometry::Vertex &v1 = meshData.vertices[indices[1]];
+			Geometry::Vertex &v2 = meshData.vertices[indices[2]];
+			glm::vec3 delta1 = v1.position - v0.position;
+			glm::vec3 delta2 = v2.position - v0.position;
+			glm::vec3 faceNormal = glm::normalize(glm::cross(delta1, delta2));
+
+			// Accumulate normals for each vertex
+			v0.normal += faceNormal;
+			vertexCount[indices[0]]++;
+			v1.normal += faceNormal;
+			vertexCount[indices[1]]++;
+			v2.normal += faceNormal;
+			vertexCount[indices[2]]++;
+		}
+		else
+		{
+			// Get the normal indices
+			uint32_t normalIndex = tempMesh.normalIndices[i];
+			Geometry::Vertex &v0 = meshData.vertices[indices[0]];
+			Geometry::Vertex &v1 = meshData.vertices[indices[1]];
+			Geometry::Vertex &v2 = meshData.vertices[indices[2]];
+
+			// Accumulate normals for each vertex
+			v0.normal += normals[normalIndex];
+			vertexCount[indices[0]]++;
+			v1.normal += normals[normalIndex];
+			vertexCount[indices[1]]++;
+			v2.normal += normals[normalIndex];
+			vertexCount[indices[2]]++;
+		}
+	}
+
+	// Normalize the accumulated normals
+	for (int i = 0; i < meshData.vertices.size(); ++i)
+	{
+		meshData.vertices[i].normal = glm::normalize(meshData.vertices[i].normal / static_cast<float>(vertexCount[i]));
 	}
 
 	// Calculate tangents and bitangents
@@ -189,33 +237,52 @@ OBJLoader::MeshData OBJLoader::ProcessMeshData(
 
 void OBJLoader::CalculateTangents(std::vector<Geometry::Vertex> &vertices, const std::vector<uint32_t> &indices)
 {
+	for (auto &vertex : vertices)
+	{
+		vertex.tangent = glm::vec3(0.0f);
+		vertex.bitangent = glm::vec3(0.0f);
+	}
+
+	std::unordered_map<uint32_t, uint32_t> tangentCount;
+	std::unordered_map<uint32_t, uint32_t> bitangentCount;
+
 	for (size_t i = 0; i < indices.size(); i += 3)
 	{
+		// Get the vertices
 		Geometry::Vertex &v0 = vertices[indices[i]];
 		Geometry::Vertex &v1 = vertices[indices[i + 1]];
 		Geometry::Vertex &v2 = vertices[indices[i + 2]];
 
+		// Calculate the edges
 		glm::vec3 edge1 = v1.position - v0.position;
 		glm::vec3 edge2 = v2.position - v0.position;
+
+		// Calculate the UV deltas
 		glm::vec2 deltaUV1 = v1.texCoords - v0.texCoords;
 		glm::vec2 deltaUV2 = v2.texCoords - v0.texCoords;
 
+		// Calculate the tangent and bitangent
 		float f = 1.0f / (deltaUV1.x * deltaUV2.y - deltaUV2.x * deltaUV1.y);
+		if (std::isinf(f)) f = 1.0f;
+		glm::vec3 tangent(f * (deltaUV2.y * edge1 - deltaUV1.y * edge2));
+		glm::vec3 bitangent(f * (deltaUV1.x * edge2 - deltaUV2.x * edge1));
 
-		glm::vec3 tangent;
-		tangent.x = f * (deltaUV2.y * edge1.x - deltaUV1.y * edge2.x);
-		tangent.y = f * (deltaUV2.y * edge1.y - deltaUV1.y * edge2.y);
-		tangent.z = f * (deltaUV2.y * edge1.z - deltaUV1.y * edge2.z);
-		tangent = glm::normalize(tangent);
+		// Accumulate the tangent and bitangent
+		for (int j = 0; j < 3; ++j)
+		{
+			vertices[indices[i + j]].tangent += tangent;
+			tangentCount[indices[i + j]]++;
 
-		glm::vec3 bitangent;
-		bitangent.x = f * (-deltaUV2.x * edge1.x + deltaUV1.x * edge2.x);
-		bitangent.y = f * (-deltaUV2.x * edge1.y + deltaUV1.x * edge2.y);
-		bitangent.z = f * (-deltaUV2.x * edge1.z + deltaUV1.x * edge2.z);
-		bitangent = glm::normalize(bitangent);
+			vertices[indices[i + j]].bitangent += bitangent;
+			bitangentCount[indices[i + j]]++;
+		}
+	}
 
-		v0.tangent = v1.tangent = v2.tangent = tangent;
-		v0.bitangent = v1.bitangent = v2.bitangent = bitangent;
+	// Normalize the tangents and bitangents
+	for (int i = 0; i < vertices.size(); ++i)
+	{
+		vertices[i].tangent = glm::normalize(vertices[i].tangent / static_cast<float>(tangentCount[i]));
+		vertices[i].bitangent = glm::normalize(vertices[i].bitangent / static_cast<float>(bitangentCount[i]));
 	}
 }
 

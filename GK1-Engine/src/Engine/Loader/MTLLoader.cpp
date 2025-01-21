@@ -120,7 +120,7 @@ MTLLoader::MTLData MTLLoader::LoadMTL(const std::string &path) {
 				}
 			}
 		}
-		else if (token == "norm")
+		else if (token == "map_Kn" || token == "norm")
 		{
 			std::string texPath = ParseTexture(line, path);
 			if (!texPath.empty())

@@ -16,5 +16,6 @@ public:
 
 private:
 	bool m_EnterGame = false;
+	int m_SelectedCamera = 0;
 };
 

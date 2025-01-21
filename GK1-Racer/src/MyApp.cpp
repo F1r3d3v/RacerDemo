@@ -4,6 +4,7 @@
 #include <Engine/Objects/Model.h>
 #include <Engine/Objects/Camera.h>
 #include <Engine/Objects/Light/PointLight.h>
+#include <Engine/Objects/Terrain.h>
 #include <Engine/ResourceManager.h>
 #include <Engine/Log.h>
 #include <Engine/Renderer.h>
@@ -40,12 +41,12 @@ void MyApp::OnStart()
 	// Load skybox
 	skybox = Skybox::LoadFromFiles(
 		{
-			"assets/textures/skybox/default/right.jpg",
-			"assets/textures/skybox/default/left.jpg",
-			"assets/textures/skybox/default/top.jpg",
-			"assets/textures/skybox/default/bottom.jpg",
-			"assets/textures/skybox/default/front.jpg",
-			"assets/textures/skybox/default/back.jpg"
+			"assets/textures/skybox/miramar/front.tga",
+			"assets/textures/skybox/miramar/back.tga",
+			"assets/textures/skybox/miramar/top.tga",
+			"assets/textures/skybox/miramar/bottom.tga",
+			"assets/textures/skybox/miramar/right.tga",
+			"assets/textures/skybox/miramar/left.tga",
 		}
 	);
 	auto shader = Shader::LoadFromFile("assets/shaders/skybox.vert", "assets/shaders/skybox.frag");
@@ -60,11 +61,13 @@ void MyApp::OnStart()
 	camera->SetPerspective(45.0f, (float)Config::WINDOW_WIDTH / Config::WINDOW_HEIGHT, 0.1f, 2000.0f);
 	scene->SetCamera(camera);
 
-	model1 = Model::LoadFromFile("assets/models/test/untitled.obj");
+	model1 = Model::LoadFromFile("assets/models/ball/ball.obj");
 	model1->SetPosition(glm::vec3(5.0f, 0.0f, 0.0f));
+	model1->SetRotation(glm::vec3(0.0f, 00.0f, 0.0f));
+	model1->SetScale(glm::vec3(0.5f));
 	auto node1 = scene->AddObject(model1);
 
-	model2 = Model::LoadFromFile("assets/models/test/untitled.obj");
+	model2 = Model::LoadFromFile("assets/models/eye/eyeball.obj");
 	model2->SetPosition(glm::vec3(0.0f, 5.0f, 0.0f));
 	model2->SetScale(glm::vec3(0.5f));
 	scene->AddObject(model2, node1.get());
@@ -73,15 +76,20 @@ void MyApp::OnStart()
 	light->SetPosition(glm::vec3(0.0f, 0.0f, 0.0f));
 	scene->AddLight(light);
 
-	//auto heightmap = Texture::LoadFromFile("assets/textures/terrain/terrain_height.png", Texture::TextureType::Height, false);
-	//auto terrain = Terrain::CreateFromHeightmap(heightmap);
-	//auto material = std::make_shared<Material>();
-	//terrain->SetMaterial(material);
-	//terrain->SetWorldScale(2.0f);
-	//terrain->SetHeightScale(150.0f);
-	//terrain->SetPosition({ 0.0f, -10.0f, 0.0f });
+	auto heightmap = Texture::LoadFromFile("assets/textures/terrain/terrain_height.png", Texture::TextureType::Height, false);
+	auto terrain = Terrain::CreateFromHeightmap(heightmap);
+	auto material = std::make_shared<Material>();
+	material->SetProperties({ glm::vec3(0.2f), glm::vec3(1.0f), glm::vec3(0.1f), 12 });
+	auto tex = Texture::LoadFromFile("assets/textures/terrain/terrain_diffuse.png");
+	material->AddTexture(Texture::TextureType::Ambient, tex);
+	material->AddTexture(Texture::TextureType::Diffuse, tex);
+	terrain->SetMaterial(material);
+	terrain->SetWorldScale(0.5f);
+	terrain->SetHeightScale(150.0f);
+	terrain->CreateGeometry();
+	terrain->SetPosition({ 0.0f, -10.0f, 0.0f });
 
-	//scene.AddObject(terrain);
+	scene->AddObject(terrain);
 }
 
 void MyApp::OnUpdate(float deltaTime)
@@ -145,7 +153,7 @@ void MyApp::OnRender(Renderer *renderer)
 	renderer->Clear(Config::CLEAR_COLOR);
 	model1->SetRotation(cubeRot);
 	model1->SetPosition(cubePos);
-	model2->SetRotation(glm::vec3(2.0f) * cubeRot);
+	model2->SetRotation(glm::cross(glm::vec3(2.0f), cubeRot));
 
 	scene->Draw(renderer);
 	skybox->Draw();

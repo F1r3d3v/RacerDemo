@@ -39,9 +39,9 @@ public:
 	glm::vec3 GetNormalAt(float x, float z) const;
 
 	void Draw() override;
+	void CreateGeometry();
 
 private:
-	void CreateGeometry();
 	float SampleHeight(int x, int z) const;
 	glm::vec3 CalculateNormal(int x, int z) const;
 

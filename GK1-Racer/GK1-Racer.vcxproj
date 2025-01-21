@@ -17,10 +17,12 @@
     </Content>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="include\CameraController\BaseCameraController.h" />
     <ClInclude Include="include\Config.h" />
     <ClInclude Include="include\MyApp.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="include\CameraController\RacingCameraController.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\MyApp.cpp" />
   </ItemGroup>

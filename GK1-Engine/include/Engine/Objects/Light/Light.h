@@ -8,7 +8,7 @@ public:
 	struct Properties {
 		glm::vec3 color{ 1.0f };
 		float intensity{ 1.0f };
-		float radius{ 10.0f };
+		float radius{ 50.0f };
 	};
 
 	Light(const Properties &props = Properties{}) : m_properties(props) {}

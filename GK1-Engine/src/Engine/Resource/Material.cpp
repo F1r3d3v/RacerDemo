@@ -5,9 +5,10 @@ static constexpr char kDefaultVertexShader[] = R"(
 layout(location = 0) in vec3 aPos;
 layout(location = 1) in vec3 aNormal;
 layout(location = 2) in vec2 aTexCoords;
+layout(location = 3) in vec3 aTangent;
 
 out vec3 FragPos;
-out vec3 Normal;
+out mat3 TBN;
 out vec2 TexCoords;
 flat out vec3 viewPos;
 
@@ -21,7 +22,11 @@ layout (std140) uniform Matrices
 void main()
 {
 	FragPos = vec3(model * vec4(aPos, 1.0));
-	Normal = normalize(mat3(transpose(inverse(model))) * aNormal);
+	vec3 T = normalize(vec3(model * vec4(aTangent, 0.0)));
+	vec3 N = normalize(vec3(model * vec4(aNormal, 0.0)));
+	T = normalize(T - dot(T, N) * N);
+	vec3 B = cross(N, T);
+	TBN = mat3(T, B, N);
 	TexCoords = aTexCoords;
 	viewPos = -vec3(view[3]) * mat3(view);
 	gl_Position = projection * view * vec4(FragPos, 1.0);
@@ -33,16 +38,20 @@ static constexpr char kDefaultFragmentShader[] = R"(
 out vec4 FragColor;
 
 in vec3 FragPos;
-in vec3 Normal;
+in mat3 TBN;
 in vec2 TexCoords;
 flat in vec3 viewPos;
-flat in int count;
 
 struct Material {
 	vec3 ambient;
 	vec3 diffuse;
 	vec3 specular;
 	float shininess;
+	sampler2D ambientMap0;
+	sampler2D diffuseMap0;
+	sampler2D specularMap0;
+	sampler2D shininessMap0;
+	sampler2D normalMap0; 
 };
 uniform Material material;
 
@@ -60,16 +69,15 @@ layout (std140) uniform Lights
     ivec4 counts;     // x=numPointLights, y=numSpotLights
 } lights;
 
-vec3 CalcLight(Light light, vec3 normal, vec3 fragPos, vec3 viewDir) {
-    vec3 lightDir;
-    float attenuation = 1.0;
+vec3 CalcLight(Light light, vec3 normal, vec3 fragPos, vec3 viewPos) {
     float intensity = light.color.w;
     
-    lightDir = normalize(light.position.xyz - fragPos);
+	vec3 viewDir = normalize(viewPos - fragPos);
+    vec3 lightDir = normalize(light.position.xyz - fragPos);
         
     // Calculate attenuation
     float distance = length(light.position.xyz - fragPos);
-    attenuation = 1.0 / (light.attenuation.x + 
+    float attenuation = 1.0 / (light.attenuation.x + 
                         light.attenuation.y * distance +
                         light.attenuation.z * distance * distance);
         
@@ -82,28 +90,28 @@ vec3 CalcLight(Light light, vec3 normal, vec3 fragPos, vec3 viewDir) {
     
     // Specular
     vec3 reflectDir = reflect(-lightDir, normal);
-    float spec = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess);
+    float spec = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess * texture(material.shininessMap0, TexCoords).r);
     
     // Combine
-    vec3 ambient = light.color.rgb * material.ambient;
-    vec3 diffuse = light.color.rgb * diff * material.diffuse;
-    vec3 specular = light.color.rgb * spec * material.specular;
+    vec3 diffuse = light.color.rgb * diff * material.diffuse * texture(material.diffuseMap0, TexCoords).rgb;
+    vec3 specular = light.color.rgb * spec * material.specular * texture(material.specularMap0, TexCoords).rgb;
     
-    return (ambient + diffuse + specular) * attenuation * intensity;
+    return (diffuse + specular) * attenuation * intensity;
 }
 
 void main()
 {
-	vec3 result = vec3(0.0);
-
-	vec3 viewDir = normalize(viewPos - FragPos);
+	vec3 Normal = texture(material.normalMap0, TexCoords).rgb;
+	Normal = Normal * 2.0 - 1.0;   
+	Normal = normalize(TBN * Normal); 
     
 	// Calculate lighting
+	vec3 result = material.ambient * texture(material.ambientMap0, TexCoords).rgb;
     for(int i = 0; i < lights.counts.x; i++) {
-        result += CalcLight(lights.pointLights[i], Normal, FragPos, viewDir);
+        result += CalcLight(lights.pointLights[i], Normal, FragPos, viewPos);
     }
     for(int i = 0; i < lights.counts.y; i++) {
-        result += CalcLight(lights.spotLights[i], Normal, FragPos, viewDir);
+        result += CalcLight(lights.spotLights[i], Normal, FragPos, viewPos);
     }
     
 	FragColor = vec4(result, 1.0);
@@ -175,31 +183,67 @@ void Material::Bind() const
 			// Set the appropriate uniform based on texture type
 			switch (type)
 			{
-			case Texture::TextureType::Ambient:
-				m_shader->SetInt("material.ambientMap" + std::to_string(textureCount[type]), textureSlot);
-				break;
-			case Texture::TextureType::Diffuse:
-				m_shader->SetInt("material.diffuseMap" + std::to_string(textureCount[type]), textureSlot);
-				break;
-			case Texture::TextureType::Specular:
-				m_shader->SetInt("material.specularMap" + std::to_string(textureCount[type]), textureSlot);
-				break;
-			case Texture::TextureType::Shininess:
-				m_shader->SetInt("material.shininessMap" + std::to_string(textureCount[type]), textureSlot);
-				break;
-			case Texture::TextureType::Normal:
-				m_shader->SetInt("material.normalMap" + std::to_string(textureCount[type]), textureSlot);
-				break;
-			case Texture::TextureType::Height:
-				m_shader->SetInt("material.heightMap" + std::to_string(textureCount[type]), textureSlot);
-				break;
-			default:
-				break;
+				case Texture::TextureType::Ambient:
+					m_shader->SetInt("material.ambientMap" + std::to_string(textureCount[type]), textureSlot);
+					break;
+				case Texture::TextureType::Diffuse:
+					m_shader->SetInt("material.diffuseMap" + std::to_string(textureCount[type]), textureSlot);
+					break;
+				case Texture::TextureType::Specular:
+					m_shader->SetInt("material.specularMap" + std::to_string(textureCount[type]), textureSlot);
+					break;
+				case Texture::TextureType::Shininess:
+					m_shader->SetInt("material.shininessMap" + std::to_string(textureCount[type]), textureSlot);
+					break;
+				case Texture::TextureType::Normal:
+					m_shader->SetInt("material.normalMap" + std::to_string(textureCount[type]), textureSlot);
+					break;
+				case Texture::TextureType::Height:
+					m_shader->SetInt("material.heightMap" + std::to_string(textureCount[type]), textureSlot);
+					break;
+				default:
+					break;
 			}
 
 			textureSlot++;
 			textureCount[type]++;
 		}
+	}
+
+	// Set default textures if none are set
+	if (textureCount[Texture::TextureType::Ambient] == 0)
+	{
+		auto texture = Texture::GetDefaultTexture();
+		texture->Bind(textureSlot);
+		m_shader->SetInt("material.ambientMap0", textureSlot);
+		textureSlot++;
+	}
+	if (textureCount[Texture::TextureType::Diffuse] == 0)
+	{
+		auto texture = Texture::GetDefaultTexture();
+		texture->Bind(textureSlot);
+		m_shader->SetInt("material.diffuseMap0", textureSlot);
+		textureSlot++;
+	}
+	if (textureCount[Texture::TextureType::Specular] == 0)
+	{
+		auto texture = Texture::GetDefaultTexture();
+		texture->Bind(textureSlot);
+		m_shader->SetInt("material.specularMap0", textureSlot);
+		textureSlot++;
+	}
+	if (textureCount[Texture::TextureType::Shininess] == 0)
+	{
+		auto texture = Texture::GetDefaultTexture();
+		texture->Bind(textureSlot);
+		m_shader->SetInt("material.shininessMap0", textureSlot);
+		textureSlot++;
+	}
+	if (textureCount[Texture::TextureType::Normal] == 0)
+	{
+		auto texture = Texture::GetDefaultTexture(true);
+		texture->Bind(textureSlot);
+		m_shader->SetInt("material.normalMap0", textureSlot);
 	}
 }
 

@@ -54,8 +54,8 @@ public:
 		m_type = type;
 	}
 
+	static std::shared_ptr<Texture> GetDefaultTexture(bool normalmap = false);
 private:
-	GLuint CreateDefaultTexture() const;
 
 	GLuint m_textureID;
 	uint8_t *m_data;

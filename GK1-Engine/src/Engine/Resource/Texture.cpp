@@ -73,13 +73,23 @@ std::shared_ptr<Texture> Texture::LoadFromData(const uint8_t *data, int width, i
 	texture->m_width = width;
 	texture->m_height = height;
 	texture->m_channels = channels;
-	texture->m_format = channels == 4 ? GL_RGBA : GL_RGB;
+	std::unordered_map<int, int> channelMap = {
+		{1, GL_RED},
+		{3, GL_RGB},
+		{4, GL_RGBA}
+	};
+	texture->m_format = channelMap[channels];
 	texture->m_internalFormat = texture->m_format;
 	texture->m_type = type;
 	texture->m_data = (uint8_t*)malloc(width * height * channels);
 
 	glGenTextures(1, &texture->m_textureID);
 	glBindTexture(GL_TEXTURE_2D, texture->m_textureID);
+
+	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+	glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
+	glPixelStorei(GL_UNPACK_SKIP_PIXELS, 0);
+	glPixelStorei(GL_UNPACK_SKIP_ROWS, 0);
 
 	glTexImage2D(GL_TEXTURE_2D, 0, texture->m_internalFormat, width, height, 0,
 				 texture->m_format, GL_UNSIGNED_BYTE, data);
@@ -156,20 +166,23 @@ void Texture::Unbind() const
 	}
 }
 
-GLuint Texture::CreateDefaultTexture() const {
-	GLuint texture;
-	glGenTextures(1, &texture);
-	glBindTexture(GL_TEXTURE_2D, texture);
+std::shared_ptr<Texture> Texture::GetDefaultTexture(bool normalmap)
+{
+	// Create textures on the fly
+	static std::shared_ptr<Texture> defaultDiffuse = nullptr;
+	static std::shared_ptr<Texture> defaultNormal = nullptr;
 
-	// Create a solid color texture
-	unsigned char defaultColor[4] = { 255, 255, 255, 255 }; // White
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, defaultColor);
+	if (!defaultDiffuse)
+	{
+		uint8_t white[] = { 255, 255, 255 };
+		defaultDiffuse = LoadFromData(white, 1, 1, 3, TextureType::Diffuse, false);
+	}
 
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	if (!defaultNormal)
+	{
+		uint8_t normal[] = { 128, 128, 255 };
+		defaultNormal = LoadFromData(normal, 1, 1, 3, TextureType::Normal, false);
+	}
 
-	glBindTexture(GL_TEXTURE_2D, 0);
-	return texture;
+	return normalmap ? defaultNormal : defaultDiffuse;
 }

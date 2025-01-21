@@ -9,7 +9,6 @@ Terrain::Terrain()
 Terrain::Terrain(const TerrainConfig &config)
 	: m_config(config)
 {
-	CreateGeometry();
 }
 
 Terrain::~Terrain() = default;
@@ -135,19 +134,16 @@ glm::vec3 Terrain::CalculateNormal(int x, int z) const {
 void Terrain::SetWorldScale(float scale)
 {
 	m_config.scale = scale;
-	CreateGeometry();
 }
 
 void Terrain::SetHeightScale(float heightScale)
 {
 	m_config.heightScale = heightScale;
-	CreateGeometry();
 }
 
 void Terrain::SetUVScale(float uvScale)
 {
 	m_config.uvScale = uvScale;
-	CreateGeometry();
 }
 
 float Terrain::GetHeightAt(float x, float z) const {
