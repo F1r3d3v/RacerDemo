@@ -25,7 +25,7 @@ public:
 
 	void Clear(glm::vec4 color);
 	GLuint GetDepthBuffer() const { return m_DepthBuffer; }
-	GLuint GetUBO() const { return m_ubo; }
+	GLuint GetMatricesUBO() const { return m_ubo; }
 	static glm::vec2 GetViewportSize();
 
 private:

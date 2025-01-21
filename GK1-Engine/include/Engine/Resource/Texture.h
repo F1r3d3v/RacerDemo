@@ -55,6 +55,8 @@ public:
 	}
 
 private:
+	GLuint CreateDefaultTexture() const;
+
 	GLuint m_textureID;
 	uint8_t *m_data;
 	int m_width;

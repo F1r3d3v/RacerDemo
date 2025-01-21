@@ -16,18 +16,16 @@ public:
 	Camera();
 	virtual ~Camera() override;
 
-	void LookAt(const glm::vec3 &target, const glm::vec3 &up = glm::vec3(0.0f, 1.0f, 0.0f));
-
 	void SetPerspective(float fov, float aspect, float nearPlane, float farPlane);
 	void SetOrthographic(float size, float nearPlane, float farPlane);
 	void SetFov(float fov);
 	void SetViewportSize(uint32_t width, uint32_t height);
 
-
 	void SetPosition(const glm::vec3 &position) override;
 	void Move(const glm::vec3 &offset) override;
 	void SetRotation(const glm::vec3 &rotation) override;
 	void Rotate(const glm::vec3 &angles) override;
+	void SetScale(const glm::vec3 &scale) override {}
 
 	ProjectionType GetProjectionType() const;
 	float GetFov() const;

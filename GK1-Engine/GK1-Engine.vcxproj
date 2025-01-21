@@ -122,6 +122,10 @@
     <ClInclude Include="include\Engine\Loader\Model\ModelLoader.h" />
     <ClInclude Include="include\Engine\Loader\Model\OBJLoader.h" />
     <ClInclude Include="include\Engine\Log.h" />
+    <ClInclude Include="include\Engine\Objects\Light\Light.h" />
+    <ClInclude Include="include\Engine\Objects\Light\LightManager.h" />
+    <ClInclude Include="include\Engine\Objects\Light\PointLight.h" />
+    <ClInclude Include="include\Engine\Objects\Light\SpotLight.h" />
     <ClInclude Include="include\Engine\Objects\Mesh.h" />
     <ClInclude Include="include\Engine\Objects\SceneNode.h" />
     <ClInclude Include="include\Engine\Objects\Terrain.h" />
@@ -139,6 +143,7 @@
     <ClInclude Include="include\Engine\Window.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\Engine\Objects\Light\LightManager.cpp" />
     <ClCompile Include="src\Engine\App.cpp" />
     <ClCompile Include="src\Engine\Loader\MTLLoader.cpp" />
     <ClCompile Include="src\Engine\Objects\Camera.cpp" />

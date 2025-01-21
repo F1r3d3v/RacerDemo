@@ -1,5 +1,6 @@
 #include "Engine/Renderer.h"
 #include "Engine/Log.h"
+#include "Engine/Objects/Light/LightManager.h"
 
 #include <GLFW/glfw3.h>
 
@@ -26,14 +27,17 @@ Renderer::Renderer(Window *window)
 	glGenBuffers(1, &m_ubo);
 
 	glBindBuffer(GL_UNIFORM_BUFFER, m_ubo);
-	glBufferData(GL_UNIFORM_BUFFER, 2 * sizeof(glm::mat4), NULL, GL_STATIC_DRAW);
+	GLsizei bufSize = 2 * sizeof(glm::mat4);
+	glBufferData(GL_UNIFORM_BUFFER, bufSize, NULL, GL_DYNAMIC_DRAW);
 	glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
-	glBindBufferRange(GL_UNIFORM_BUFFER, 0, m_ubo, 0, 2 * sizeof(glm::mat4));
+	glBindBufferBase(GL_UNIFORM_BUFFER, 0, m_ubo);
 }
 
 Renderer::~Renderer()
 {
+	glDeleteBuffers(1, &m_ubo);
+	glDeleteRenderbuffers(1, &m_DepthBuffer);
 }
 
 void Renderer::Clear(glm::vec4 color)

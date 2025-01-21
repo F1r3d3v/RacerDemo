@@ -3,7 +3,7 @@
 #include <Engine/Objects/Skybox.h>
 #include <Engine/Objects/Model.h>
 #include <Engine/Objects/Camera.h>
-#include <Engine/Objects/Terrain.h>
+#include <Engine/Objects/Light/PointLight.h>
 #include <Engine/ResourceManager.h>
 #include <Engine/Log.h>
 #include <Engine/Renderer.h>
@@ -13,7 +13,7 @@
 
 #include "Config.h"
 
-static Scene scene;
+static std::unique_ptr<Scene> scene;
 static std::shared_ptr<Skybox> skybox;
 static std::shared_ptr<Model> model1;
 static std::shared_ptr<Model> model2;
@@ -34,6 +34,8 @@ MyApp::~MyApp()
 void MyApp::OnStart()
 {
 	Log::Info("App initialized");
+
+	scene = std::make_unique<Scene>();
 
 	// Load skybox
 	skybox = Skybox::LoadFromFiles(
@@ -56,16 +58,20 @@ void MyApp::OnStart()
 	camera->SetPosition(glm::vec3(0.0f, 0.0f, 0.0f));
 	camera->LookAt(glm::vec3(1.0f, 0.0f, 0.0f));
 	camera->SetPerspective(45.0f, (float)Config::WINDOW_WIDTH / Config::WINDOW_HEIGHT, 0.1f, 2000.0f);
-	scene.SetCamera(camera);
+	scene->SetCamera(camera);
 
 	model1 = Model::LoadFromFile("assets/models/test/untitled.obj");
 	model1->SetPosition(glm::vec3(5.0f, 0.0f, 0.0f));
-	auto node1 = scene.AddObject(model1);
+	auto node1 = scene->AddObject(model1);
 
 	model2 = Model::LoadFromFile("assets/models/test/untitled.obj");
 	model2->SetPosition(glm::vec3(0.0f, 5.0f, 0.0f));
 	model2->SetScale(glm::vec3(0.5f));
-	scene.AddObject(model2, node1.get());
+	scene->AddObject(model2, node1.get());
+
+	auto light = std::make_shared<PointLight>(Light::Properties{ glm::vec3(1.0f), 1.0f, 100.0f });
+	light->SetPosition(glm::vec3(0.0f, 0.0f, 0.0f));
+	scene->AddLight(light);
 
 	//auto heightmap = Texture::LoadFromFile("assets/textures/terrain/terrain_height.png", Texture::TextureType::Height, false);
 	//auto terrain = Terrain::CreateFromHeightmap(heightmap);
@@ -83,7 +89,7 @@ void MyApp::OnUpdate(float deltaTime)
 	if (Input::IsKeyPressed(GLFW_KEY_ESCAPE))
 		Close();
 
-	auto camera = scene.GetCamera();
+	auto camera = scene->GetCamera();
 
 	// Cube pos and rot
 	cubePos.x = 5.0f * (float)glm::sin(glfwGetTime());
@@ -141,7 +147,7 @@ void MyApp::OnRender(Renderer *renderer)
 	model1->SetPosition(cubePos);
 	model2->SetRotation(glm::vec3(2.0f) * cubeRot);
 
-	scene.Draw(renderer);
+	scene->Draw(renderer);
 	skybox->Draw();
 }
 
@@ -160,5 +166,5 @@ void MyApp::OnImGuiRender()
 
 void MyApp::OnResize(int width, int height)
 {
-	scene.GetCamera()->SetViewportSize(width, height);
+	scene->GetCamera()->SetViewportSize(width, height);
 }

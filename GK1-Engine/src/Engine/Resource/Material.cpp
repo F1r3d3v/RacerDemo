@@ -9,6 +9,7 @@ layout(location = 2) in vec2 aTexCoords;
 out vec3 FragPos;
 out vec3 Normal;
 out vec2 TexCoords;
+flat out vec3 viewPos;
 
 uniform mat4 model;
 layout (std140) uniform Matrices
@@ -20,8 +21,9 @@ layout (std140) uniform Matrices
 void main()
 {
 	FragPos = vec3(model * vec4(aPos, 1.0));
-	Normal = mat3(transpose(inverse(model))) * aNormal;
+	Normal = normalize(mat3(transpose(inverse(model))) * aNormal);
 	TexCoords = aTexCoords;
+	viewPos = -vec3(view[3]) * mat3(view);
 	gl_Position = projection * view * vec4(FragPos, 1.0);
 }
 )";
@@ -33,6 +35,8 @@ out vec4 FragColor;
 in vec3 FragPos;
 in vec3 Normal;
 in vec2 TexCoords;
+flat in vec3 viewPos;
+flat in int count;
 
 struct Material {
 	vec3 ambient;
@@ -40,20 +44,79 @@ struct Material {
 	vec3 specular;
 	float shininess;
 };
-
 uniform Material material;
+
+struct Light {
+    vec4 position;
+    vec4 direction;	  // w = 0.0 for point lights and w > 0.0 for spot lights focus exponent
+    vec4 color;       // RGB + intensity in w
+    vec4 attenuation; // x=constant, y=linear, z=quadratic, w=radius
+};
+
+layout (std140) uniform Lights
+{
+    Light pointLights[4];
+    Light spotLights[4];
+    ivec4 counts;     // x=numPointLights, y=numSpotLights
+} lights;
+
+vec3 CalcLight(Light light, vec3 normal, vec3 fragPos, vec3 viewDir) {
+    vec3 lightDir;
+    float attenuation = 1.0;
+    float intensity = light.color.w;
+    
+    lightDir = normalize(light.position.xyz - fragPos);
+        
+    // Calculate attenuation
+    float distance = length(light.position.xyz - fragPos);
+    attenuation = 1.0 / (light.attenuation.x + 
+                        light.attenuation.y * distance +
+                        light.attenuation.z * distance * distance);
+        
+	if (light.direction.w > 0.0) {
+		intensity *= pow(dot(normalize(-light.direction.xyz), lightDir), light.direction.w);
+	}
+    
+    // Diffuse
+    float diff = max(dot(normal, lightDir), 0.0);
+    
+    // Specular
+    vec3 reflectDir = reflect(-lightDir, normal);
+    float spec = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess);
+    
+    // Combine
+    vec3 ambient = light.color.rgb * material.ambient;
+    vec3 diffuse = light.color.rgb * diff * material.diffuse;
+    vec3 specular = light.color.rgb * spec * material.specular;
+    
+    return (ambient + diffuse + specular) * attenuation * intensity;
+}
 
 void main()
 {
-	FragColor = vec4(material.diffuse, 1.0);
+	vec3 result = vec3(0.0);
+
+	vec3 viewDir = normalize(viewPos - FragPos);
+    
+	// Calculate lighting
+    for(int i = 0; i < lights.counts.x; i++) {
+        result += CalcLight(lights.pointLights[i], Normal, FragPos, viewDir);
+    }
+    for(int i = 0; i < lights.counts.y; i++) {
+        result += CalcLight(lights.spotLights[i], Normal, FragPos, viewDir);
+    }
+    
+	FragColor = vec4(result, 1.0);
 }
 )";
 
 Material::Material() : m_properties{}
 {
 	auto shader = Shader::LoadFromString(kDefaultVertexShader, kDefaultFragmentShader);
-	unsigned int uniformBlockIndex = glGetUniformBlockIndex(shader->GetID(), "Matrices");
-	glUniformBlockBinding(shader->GetID(), uniformBlockIndex, 0);
+	unsigned int uniformMatricesBlockIndex = glGetUniformBlockIndex(shader->GetID(), "Matrices");
+	glUniformBlockBinding(shader->GetID(), uniformMatricesBlockIndex, 0);
+	unsigned int uniformLightsBlockIndex = glGetUniformBlockIndex(shader->GetID(), "Lights");
+	glUniformBlockBinding(shader->GetID(), uniformLightsBlockIndex, 1);
 	SetShader(shader);
 }
 

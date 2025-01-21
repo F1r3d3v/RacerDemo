@@ -12,6 +12,7 @@ public:
 	virtual void Move(const glm::vec3 &offset);
 	glm::vec3 GetPosition() const;
 
+	virtual void LookAt(const glm::vec3 &target, const glm::vec3 &up = glm::vec3(0.0f, 1.0f, 0.0f));
 	virtual void SetRotation(const glm::vec3 &rotation);
 	virtual void Rotate(const glm::vec3 &angles);
 	glm::vec3 GetRotation() const;

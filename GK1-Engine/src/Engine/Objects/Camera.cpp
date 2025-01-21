@@ -27,16 +27,6 @@ void Camera::UpdateState()
 	m_viewChanged = true;
 }
 
-void Camera::LookAt(const glm::vec3 &target, const glm::vec3 &up)
-{
-	glm::mat4 lookAt = glm::lookAt(m_position, target, up);
-
-	glm::mat3 rotationMatrix(lookAt);
-	glm::vec3 angles = glm::degrees(glm::eulerAngles(glm::quat_cast(rotationMatrix)));
-
-	SetRotation(-angles);
-}
-
 glm::mat4 Camera::GetViewMatrix() const
 {
 	if (m_viewChanged)

@@ -39,6 +39,14 @@ glm::vec3 Transform::GetPosition() const
 	return m_position;
 }
 
+void Transform::LookAt(const glm::vec3 &target, const glm::vec3 &up)
+{
+	glm::vec3 direction = glm::normalize(target - m_position);
+	glm::quat rotation = glm::quatLookAt(direction, up);
+	m_rotation = glm::eulerAngles(rotation);
+	SetRotation(glm::degrees(m_rotation));
+}
+
 void Transform::SetRotation(const glm::vec3 &rotation)
 {
 	m_rotation = rotation;

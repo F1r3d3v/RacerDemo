@@ -5,5 +5,5 @@ class GraphicsObject : public Transform
 {
 public:
 	virtual ~GraphicsObject() = default;
-	virtual void Draw() = 0;
+	virtual void Draw() {}
 };
