@@ -61,6 +61,25 @@ std::shared_ptr<Shader> Shader::LoadFromString(const std::string &vertexSrc, con
 	return shader;
 }
 
+std::string Shader::ReadFile(const std::string &path)
+{
+	std::string content;
+	std::ifstream fileStream(path, std::ios::in);
+
+	if (!fileStream.is_open())
+	{
+		std::cerr << "ERROR::SHADER::FILE_NOT_SUCCESSFULLY_READ: " << path << std::endl;
+		return "";
+	}
+
+	std::stringstream buffer;
+	buffer << fileStream.rdbuf();
+	content = buffer.str();
+
+	fileStream.close();
+	return content;
+}
+
 bool Shader::AddShaderStage(ShaderType type, const std::string &source)
 {
 	GLenum glType;
@@ -71,6 +90,12 @@ bool Shader::AddShaderStage(ShaderType type, const std::string &source)
 			break;
 		case ShaderType::Fragment:
 			glType = GL_FRAGMENT_SHADER;
+			break;
+		case ShaderType::TessControl:
+			glType = GL_TESS_CONTROL_SHADER;
+			break;
+		case ShaderType::TessEvaluation:
+			glType = GL_TESS_EVALUATION_SHADER;
 			break;
 		default:
 			return false;

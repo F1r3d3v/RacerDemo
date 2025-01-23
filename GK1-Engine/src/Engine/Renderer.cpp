@@ -46,6 +46,18 @@ void Renderer::Clear(glm::vec4 color)
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
+void Renderer::SetWireframe(bool enabled)
+{
+	glPolygonMode(GL_FRONT_AND_BACK, enabled ? GL_LINE : GL_FILL);
+}
+
+bool Renderer::GetWireframe() const
+{
+	int mode[2];
+	glGetIntegerv(GL_POLYGON_MODE, mode);
+	return mode[0] == GL_LINE;
+}
+
 glm::vec2 Renderer::GetViewportSize()
 {
 	if (m_Window)

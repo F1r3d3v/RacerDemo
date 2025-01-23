@@ -22,6 +22,8 @@ protected:
 
 	void SetVSync(bool enabled);
 	bool GetVSync() const { return m_IsVsync; }
+	void SetWireframe(bool enabled) { m_Renderer->SetWireframe(enabled); }
+	bool GetWireframe() const { return m_Renderer->GetWireframe(); }
 
 	bool IsFixedTimeStep = false;
 	float FixedTimeStep = 1.0f / 60.0f;

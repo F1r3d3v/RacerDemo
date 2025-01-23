@@ -10,7 +10,9 @@ public:
 
 	enum class ShaderType {
 		Vertex,
-		Fragment
+		Fragment,
+		TessControl,
+		TessEvaluation,
 	};
 
 	Shader();
@@ -18,6 +20,7 @@ public:
 
 	static std::shared_ptr<Shader> LoadFromFile(const std::string &vertexPath, const std::string &fragmentPath);
 	static std::shared_ptr<Shader> LoadFromString(const std::string &vertexSrc, const std::string &fragmentSrc);
+	static std::string ReadFile(const std::string &path);
 
 	bool AddShaderStage(ShaderType type, const std::string &source);
 	bool Link();

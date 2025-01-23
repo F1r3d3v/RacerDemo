@@ -18,9 +18,11 @@ static std::unique_ptr<Scene> scene;
 static std::shared_ptr<Skybox> skybox;
 static std::shared_ptr<Model> model1;
 static std::shared_ptr<Model> model2;
+static std::shared_ptr<Terrain> terrain;
 
 static glm::vec3 cubeRot = glm::vec3(0.0f);
 static glm::vec3 cubePos = glm::vec3(0.0f);
+static glm::vec3 rot;
 
 MyApp::MyApp(std::string title, int width, int height)
 	: App(title, width, height)
@@ -57,7 +59,7 @@ void MyApp::OnStart()
 	// Set camera properties
 	auto camera = std::make_shared<Camera>();
 	camera->SetPosition(glm::vec3(0.0f, 0.0f, 0.0f));
-	camera->LookAt(glm::vec3(1.0f, 0.0f, 0.0f));
+	camera->LookAt(glm::vec3(0.0f, 0.0f, -1.0f));
 	camera->SetPerspective(45.0f, (float)Config::WINDOW_WIDTH / Config::WINDOW_HEIGHT, 0.1f, 2000.0f);
 	scene->SetCamera(camera);
 
@@ -73,21 +75,20 @@ void MyApp::OnStart()
 	scene->AddObject(model2, node1.get());
 
 	auto light = std::make_shared<PointLight>(Light::Properties{ glm::vec3(1.0f), 1.0f, 100.0f });
-	light->SetPosition(glm::vec3(0.0f, 0.0f, 0.0f));
+	light->SetPosition(glm::vec3(0.0f, 5.0f, 10.0f));
 	scene->AddLight(light);
 
-	auto heightmap = Texture::LoadFromFile("assets/textures/terrain/terrain_height.png", Texture::TextureType::Height, false);
-	auto terrain = Terrain::CreateFromHeightmap(heightmap);
-	auto material = std::make_shared<Material>();
-	material->SetProperties({ glm::vec3(0.2f), glm::vec3(1.0f), glm::vec3(0.1f), 12 });
-	auto tex = Texture::LoadFromFile("assets/textures/terrain/terrain_diffuse.png");
+	auto heightmap = Texture::LoadFromFile("assets/textures/terrain1/terrain_height.png", Texture::TextureType::Height, false);
+	terrain = std::make_shared<Terrain>();
+	terrain->SetHeightmap(heightmap);
+	auto material = terrain->GetMaterial();
+	material->SetProperties({ glm::vec3(0.1f), glm::vec3(1.0f), glm::vec3(1.0f), 256 });
+	auto tex = Texture::LoadFromFile("assets/textures/terrain1/terrain_diffuse.png");
 	material->AddTexture(Texture::TextureType::Ambient, tex);
 	material->AddTexture(Texture::TextureType::Diffuse, tex);
-	terrain->SetMaterial(material);
-	terrain->SetWorldScale(0.5f);
-	terrain->SetHeightScale(150.0f);
-	terrain->CreateGeometry();
-	terrain->SetPosition({ 0.0f, -10.0f, 0.0f });
+	terrain->SetHeightScale(128.0);
+	terrain->SetWorldScale(0.5);
+	terrain->SetPosition({ 0.0f, -24, 0.0f });
 
 	scene->AddObject(terrain);
 }
@@ -97,14 +98,19 @@ void MyApp::OnUpdate(float deltaTime)
 	if (Input::IsKeyPressed(GLFW_KEY_ESCAPE))
 		Close();
 
+	if (Input::IsKeyPressed(GLFW_KEY_F1))
+		SetWireframe(!GetWireframe());
+
+	terrain->SetRotation(rot);
+
 	auto camera = scene->GetCamera();
 
 	// Cube pos and rot
-	cubePos.x = 5.0f * (float)glm::sin(glfwGetTime());
-	cubePos.z = 5.0f * (float)glm::cos(glfwGetTime());
+	cubePos.x = 5.0f * (float)glm::sin(glfwGetTime()/2);
+	cubePos.z = 5.0f * (float)glm::cos(glfwGetTime()/2);
 	cubePos.y = 0.0f;
-	cubeRot.y += 50.0f * deltaTime;
-	cubeRot.x += 50.0f * deltaTime;
+	cubeRot.y += 30.0f * deltaTime;
+	cubeRot.x += 30.0f * deltaTime;
 
 	glm::vec3 forward = camera->GetForward();
 	glm::vec3 right = camera->GetRight();
@@ -113,7 +119,7 @@ void MyApp::OnUpdate(float deltaTime)
 	// Camera movement
 	glm::vec3 cameraSpeed = glm::vec3(5.0f * deltaTime);
 	if (Input::IsKeyDown(GLFW_KEY_LEFT_SHIFT))
-		cameraSpeed *= 2.0f;
+		cameraSpeed *= 10.0f;
 	if (Input::IsKeyDown(GLFW_KEY_LEFT_CONTROL))
 		cameraSpeed *= 0.5f;
 	if (Input::IsKeyDown(GLFW_KEY_W))
@@ -167,6 +173,9 @@ void MyApp::OnImGuiRender()
 	ImGui::SetNextWindowCollapsed(false, ImGuiCond_Once);
 	ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x, 0), ImGuiCond_Always, ImVec2(1.0f, 0.0f));
 	ImGui::Begin("Control Panel", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize);
+
+	// Rotation
+	ImGui::SliderFloat3("Rot", &rot[0], -90.0f, 90.0f);
 
 	ImGui::SetWindowSize(ImVec2(ImGui::GetWindowWidth(), 0.0));
 	ImGui::End();

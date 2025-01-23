@@ -24,6 +24,8 @@ public:
 	~Renderer();
 
 	void Clear(glm::vec4 color);
+	void SetWireframe(bool enabled);
+	bool GetWireframe() const;
 	GLuint GetDepthBuffer() const { return m_DepthBuffer; }
 	GLuint GetMatricesUBO() const { return m_ubo; }
 	static glm::vec2 GetViewportSize();

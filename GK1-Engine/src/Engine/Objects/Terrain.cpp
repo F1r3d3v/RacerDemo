@@ -1,199 +1,352 @@
 #include "Engine/Objects/Terrain.h"
-#include <algorithm>
 
-Terrain::Terrain()
-	: m_config{}
+static constexpr char vertexShaderSource[] = R"(
+#version 410 core
+layout (location = 0) in vec3 aPos;
+layout (location = 1) in vec2 aTexCoords;
+
+out VS_OUT {
+    vec2 texCoords;
+} vs_out;
+
+void main() {
+    vs_out.texCoords = aTexCoords;
+    gl_Position = vec4(aPos, 1.0);
+}
+)";
+
+static constexpr char tessControlShaderSource[] = R"(
+#version 410 core
+layout (vertices = 4) out;
+
+in VS_OUT {
+    vec2 texCoords;
+} tcs_in[];
+
+out TCS_OUT {
+    vec2 texCoords;
+} tcs_out[];
+
+uniform float tessLevel;
+
+void main() {
+    // Pass through vertex position
+    gl_out[gl_InvocationID].gl_Position = gl_in[gl_InvocationID].gl_Position;
+    tcs_out[gl_InvocationID].texCoords = tcs_in[gl_InvocationID].texCoords; // Pass through texture coordinates
+    
+    // Set tessellation levels
+    if (gl_InvocationID == 0) {
+        gl_TessLevelOuter[0] = tessLevel;
+        gl_TessLevelOuter[1] = tessLevel;
+        gl_TessLevelOuter[2] = tessLevel;
+        gl_TessLevelOuter[3] = tessLevel;
+        
+        gl_TessLevelInner[0] = tessLevel;
+        gl_TessLevelInner[1] = tessLevel;
+    }
+}
+)";
+
+static constexpr char tessEvalShaderSource[] = R"(
+#version 410 core
+layout (quads, fractional_odd_spacing, ccw) in;
+
+in TCS_OUT {
+    vec2 texCoords;
+} tes_in[];
+
+out TES_OUT {
+    vec3 fragPos;
+    vec2 texCoords;
+	mat3 TBN;
+	flat vec3 viewPos;
+} tes_out;
+
+uniform mat4 model;
+layout (std140) uniform Matrices
 {
-}
+    mat4 view;
+    mat4 projection;
+};
 
-Terrain::Terrain(const TerrainConfig &config)
-	: m_config(config)
+uniform sampler2D heightMap;
+uniform float heightScale;
+
+vec2 interpolate2D(vec2 v0, vec2 v1, vec2 v2, vec2 v3, vec2 uv)
 {
+    vec2 t00 = tes_in[0].texCoords;
+    vec2 t01 = tes_in[1].texCoords;
+    vec2 t10 = tes_in[2].texCoords;
+    vec2 t11 = tes_in[3].texCoords;
+
+    // Bilinear interpolation
+    vec2 t0 = (t01 - t00) * uv.x + t00;
+    vec2 t1 = (t11 - t10) * uv.x + t10;
+    return (t1 - t0) * uv.y + t0;
 }
 
-Terrain::~Terrain() = default;
+vec4 interpolate4D(vec4 v0, vec4 v1, vec4 v2, vec4 v3, vec2 uv)
+{
+    vec4 p00 = gl_in[0].gl_Position;
+    vec4 p01 = gl_in[1].gl_Position;
+    vec4 p10 = gl_in[2].gl_Position;
+    vec4 p11 = gl_in[3].gl_Position;
 
-std::shared_ptr<Terrain> Terrain::CreateFromHeightmap(const std::shared_ptr<Texture> &heightmap) {
-	if (!heightmap || heightmap->GetType() != Texture::TextureType::Height) {
-		return nullptr;
+    // Bilinear interpolation
+    vec4 p0 = (p01 - p00) * uv.x + p00;
+    vec4 p1 = (p11 - p10) * uv.x + p10;
+    return (p1 - p0) * uv.y + p0;
+}
+
+vec3 calcNormal(vec2 texCoord)
+{
+	const ivec3 off = ivec3(-1,0,1);
+
+	float left = textureOffset(heightMap, texCoord, off.xy).r * heightScale;
+	float right = textureOffset(heightMap, texCoord, off.zy).r * heightScale;
+	float down = textureOffset(heightMap, texCoord, off.yx).r * heightScale;
+	float up = textureOffset(heightMap, texCoord, off.yz).r * heightScale;
+
+    return normalize(vec3(left - right, 2.0, down - up));
+}
+
+void main() {
+    // Interpolate texture coordinates
+    vec2 texCoord = interpolate2D(tes_in[0].texCoords, tes_in[1].texCoords,
+                                  tes_in[2].texCoords, tes_in[3].texCoords, gl_TessCoord.xy);
+    
+    // Interpolate position
+    vec4 pos = interpolate4D(gl_in[0].gl_Position, gl_in[1].gl_Position,
+                             gl_in[2].gl_Position, gl_in[3].gl_Position, gl_TessCoord.xy);
+
+    // displace point along normal
+    pos.y += texture(heightMap, texCoord).r * heightScale;
+
+	// Calculate TBN matrix
+    vec3 N = transpose(inverse(mat3(model))) * calcNormal(texCoord);
+	vec3 B = normalize(cross(N, vec3(1.0, 0.0, 0.0)));
+	vec3 T = normalize(cross(B, N));
+    
+    // Output
+    tes_out.fragPos = vec3(model * pos);
+	tes_out.TBN = mat3(T, B, N);
+    tes_out.texCoords = texCoord;
+	tes_out.viewPos = -vec3(view[3]) * mat3(view);
+    
+    gl_Position = projection * view * model * pos;
+}
+)";
+
+static constexpr char fragmentShaderSource[] = R"(
+#version 410 core
+
+in TES_OUT {
+    vec3 fragPos;
+    vec2 texCoords;
+    mat3 TBN;
+	flat vec3 viewPos;
+} fs_in;
+
+out vec4 FragColor;
+
+struct Material {
+	vec3 ambient;
+	vec3 diffuse;
+	vec3 specular;
+	float shininess;
+	sampler2D ambientMap0;
+	sampler2D diffuseMap0;
+	sampler2D specularMap0;
+	sampler2D shininessMap0;
+	sampler2D normalMap0; 
+};
+uniform Material material;
+
+struct Light {
+    vec4 position;
+    vec4 direction;	  // w = 0.0 for point lights and w > 0.0 for spot lights focus exponent
+    vec4 color;       // RGB + intensity in w
+    vec4 attenuation; // x=constant, y=linear, z=quadratic, w=radius
+};
+
+layout (std140) uniform Lights
+{
+    Light pointLights[4];
+    Light spotLights[4];
+    ivec4 counts;     // x=numPointLights, y=numSpotLights
+} lights;
+
+vec3 CalcLight(Light light, vec3 normal, vec3 fragPos, vec3 viewPos)
+{
+    float intensity = light.color.w;
+    
+	vec3 viewDir = normalize(viewPos - fragPos);
+    vec3 lightDir = normalize(light.position.xyz - fragPos);
+        
+    // Calculate attenuation
+    float distance = length(light.position.xyz - fragPos);
+    float attenuation = 1.0 / (light.attenuation.x + 
+                        light.attenuation.y * distance +
+                        light.attenuation.z * distance * distance);
+        
+	if (light.direction.w > 0.0) {
+		intensity *= pow(dot(normalize(-light.direction.xyz), lightDir), light.direction.w);
 	}
-
-	auto terrain = std::make_shared<Terrain>();
-
-	int width = heightmap->GetWidth();
-	int height = heightmap->GetHeight();
-	uint8_t *data = heightmap->GetData();
-
-	std::vector<float> heightData(width * height);
-	for (int i = 0; i < width * height; i++) {
-		heightData[i] = static_cast<float>(data[i]) / 255.0f;
-	}
-
-	terrain->SetHeightData(heightData, width, height);
-	return terrain;
+    
+    // Diffuse
+    float diff = max(dot(normal, lightDir), 0.0);
+    
+    // Specular
+    vec3 reflectDir = reflect(-lightDir, normal);
+    float spec = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess * texture(material.shininessMap0, fs_in.texCoords).r);
+    
+    // Combine
+    vec3 diffuse = light.color.rgb * diff * material.diffuse * texture(material.diffuseMap0, fs_in.texCoords).rgb;
+    vec3 specular = light.color.rgb * spec * material.specular * texture(material.specularMap0, fs_in.texCoords).rgb;
+    
+    return (diffuse + specular) * attenuation * intensity;
 }
 
-void Terrain::SetHeightData(const std::vector<float> &heightData, uint32_t width, uint32_t depth) {
-	m_heightData = heightData;
-	m_config.width = width;
-	m_config.depth = depth;
-	CreateGeometry();
+void main()
+{
+	vec3 Normal = texture(material.normalMap0, fs_in.texCoords).rgb;
+	Normal = Normal * 2.0 - 1.0;   
+	Normal = normalize(fs_in.TBN * Normal); 
+    
+	// Calculate lighting
+	vec3 result = material.ambient * texture(material.ambientMap0, fs_in.texCoords).rgb;
+    for(int i = 0; i < lights.counts.x; i++) {
+        result += CalcLight(lights.pointLights[i], Normal, fs_in.fragPos, fs_in.viewPos);
+    }
+    for(int i = 0; i < lights.counts.y; i++) {
+        result += CalcLight(lights.spotLights[i], Normal, fs_in.fragPos, fs_in.viewPos);
+    }
+    
+	FragColor = vec4(Normal, 1.0);
+}
+)";
+
+Terrain::Terrain(uint32_t gridSize)
+	: m_gridSize(gridSize)
+	, m_WorldScale(1.0f)
+	, m_tessLevel(16.0f)
+	, m_heightScale(128.0f)
+{
+	// Create and bind VAO
+	glGenVertexArrays(1, &m_vao);
+	glGenBuffers(1, &m_vbo);
+	glGenBuffers(1, &m_ebo);
+
+	// Load terrain shaders
+	auto shader = std::make_shared<Shader>();
+	shader->AddShaderStage(Shader::ShaderType::Vertex, vertexShaderSource);
+	shader->AddShaderStage(Shader::ShaderType::TessControl, tessControlShaderSource);
+	shader->AddShaderStage(Shader::ShaderType::TessEvaluation, tessEvalShaderSource);
+	shader->AddShaderStage(Shader::ShaderType::Fragment, fragmentShaderSource);
+	shader->Link();
+
+	m_material = std::make_shared<Material>(shader);
 }
 
-void Terrain::CreateGeometry() {
-	std::vector<Geometry::Vertex> vertices;
-	std::vector<uint32_t> indices;
+Terrain::~Terrain()
+{
+	Cleanup();
+}
 
-	vertices.reserve(m_config.width * m_config.depth);
-	indices.reserve((m_config.width - 1) * (m_config.depth - 1) * 6);
+void Terrain::SetupGeometry()
+{
+	if (!m_heightmap) return;
 
-	// Generate vertices
-	for (uint32_t z = 0; z < m_config.depth; ++z) {
-		for (uint32_t x = 0; x < m_config.width; ++x) {
+	// Generate a grid of vertices
+	float spacing = 1.0f / (m_gridSize - 1);
+	int width = m_heightmap->GetWidth();
+	int height = m_heightmap->GetHeight();
+
+	for (uint32_t z = 0; z < m_gridSize; ++z)
+	{
+		for (uint32_t x = 0; x < m_gridSize; ++x)
+		{
 			Geometry::Vertex vertex;
-
-			// Calculate actual world position
-			float xPos = (static_cast<float>(x) - m_config.width * 0.5f) * m_config.scale;
-			float zPos = (static_cast<float>(z) - m_config.depth * 0.5f) * m_config.scale;
-
-			// Real displacement using height data
-			float height = SampleHeight(x, z);
-			float yPos = height * m_config.heightScale;
-
-			vertex.position = glm::vec3(xPos, yPos, zPos);
-
-			// Calculate normal using central differences
-			vertex.normal = CalculateNormal(x, z);
-
-			// Calculate texture coordinates
-			vertex.texCoords = glm::vec2(
-				static_cast<float>(x) / (m_config.width - 1) * m_config.uvScale,
-				static_cast<float>(z) / (m_config.depth - 1) * m_config.uvScale
-			);
-
-			// Calculate tangent space basis vectors
-			glm::vec3 tangent(1.0f, 0.0f, 0.0f);
-			vertex.tangent = glm::normalize(tangent - vertex.normal * glm::dot(tangent, vertex.normal));
-			vertex.bitangent = glm::cross(vertex.normal, vertex.tangent);
-
-			vertices.push_back(vertex);
+			vertex.position = glm::vec3(width * (x * spacing - 0.5f), 0.0f, height * (z * spacing - 0.5f)) * m_WorldScale;
+			vertex.texCoords = glm::vec2(x * spacing, z * spacing);
+			m_vertices.push_back(vertex);
 		}
 	}
 
-	// Generate indices for triangles
-	for (uint32_t z = 0; z < m_config.depth - 1; ++z) {
-		for (uint32_t x = 0; x < m_config.width - 1; ++x) {
-			uint32_t topLeft = z * m_config.width + x;
+	// Generate indices for patches (quads)
+	for (uint32_t z = 0; z < m_gridSize - 1; ++z)
+	{
+		for (uint32_t x = 0; x < m_gridSize - 1; ++x)
+		{
+			uint32_t topLeft = z * m_gridSize + x;
 			uint32_t topRight = topLeft + 1;
-			uint32_t bottomLeft = (z + 1) * m_config.width + x;
+			uint32_t bottomLeft = (z + 1) * m_gridSize + x;
 			uint32_t bottomRight = bottomLeft + 1;
 
-			// First triangle
-			indices.push_back(topLeft);
-			indices.push_back(bottomLeft);
-			indices.push_back(topRight);
-
-			// Second triangle
-			indices.push_back(topRight);
-			indices.push_back(bottomLeft);
-			indices.push_back(bottomRight);
+			m_indices.push_back(topLeft);
+			m_indices.push_back(bottomLeft);
+			m_indices.push_back(topRight);
+			m_indices.push_back(bottomRight);
 		}
 	}
 
-	// Create or update the mesh
-	if (!m_mesh) {
-		m_mesh = std::make_shared<Mesh>();
+	glBindVertexArray(m_vao);
+
+	// Bind vertices
+	glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
+	glBufferData(GL_ARRAY_BUFFER, m_vertices.size() * sizeof(Geometry::Vertex),
+				 m_vertices.data(), GL_STATIC_DRAW);
+
+	// Bind indices
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_ebo);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, m_indices.size() * sizeof(uint32_t),
+				 m_indices.data(), GL_STATIC_DRAW);
+
+	// Set vertex attributes
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Geometry::Vertex),
+						  (void *)offsetof(Geometry::Vertex, position));
+
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Geometry::Vertex),
+						  (void *)offsetof(Geometry::Vertex, texCoords));
+
+	glBindVertexArray(0);
+}
+
+void Terrain::Draw()
+{
+	if (!m_heightmap) return;
+	if (m_dirty)
+	{
+		SetupGeometry();
+		m_dirty = false;
 	}
 
-	auto geometry = std::make_shared<Geometry>(vertices, indices);
-	m_mesh->SetGeometry(geometry);
+	m_material->Bind();
+
+	auto shader = m_material->GetShader();
+	shader->Use();
+
+	// Set uniforms
+	shader->SetMat4("model", GetWorldMatrix());
+	shader->SetFloat("tessLevel", m_tessLevel);
+	shader->SetFloat("heightScale", m_heightScale);
+
+	// Bind textures
+	m_heightmap->Bind(5);
+	shader->SetInt("heightMap", 5);
+
+	// Draw patches
+	glPatchParameteri(GL_PATCH_VERTICES, 4);
+	glBindVertexArray(m_vao);
+	glDrawElements(GL_PATCHES, (GLsizei)m_indices.size(), GL_UNSIGNED_INT, 0);
+	glBindVertexArray(0);
 }
 
-float Terrain::SampleHeight(int x, int z) const {
-	x = std::clamp(x, 0, static_cast<int>(m_config.width) - 1);
-	z = std::clamp(z, 0, static_cast<int>(m_config.depth) - 1);
-	return m_heightData[z * m_config.width + x];
-}
-
-glm::vec3 Terrain::CalculateNormal(int x, int z) const {
-	float hL = SampleHeight(x - 1, z);
-	float hR = SampleHeight(x + 1, z);
-	float hD = SampleHeight(x, z - 1);
-	float hU = SampleHeight(x, z + 1);
-
-	// Calculate the normal using the height differences
-	glm::vec3 normal(
-		(hL - hR) * m_config.heightScale,
-		2.0f * m_config.scale,
-		(hD - hU) * m_config.heightScale
-	);
-
-	return glm::normalize(normal);
-}
-
-void Terrain::SetWorldScale(float scale)
+void Terrain::Cleanup()
 {
-	m_config.scale = scale;
-}
-
-void Terrain::SetHeightScale(float heightScale)
-{
-	m_config.heightScale = heightScale;
-}
-
-void Terrain::SetUVScale(float uvScale)
-{
-	m_config.uvScale = uvScale;
-}
-
-float Terrain::GetHeightAt(float x, float z) const {
-	float nx = (x / m_config.scale + m_config.width * 0.5f);
-	float nz = (z / m_config.scale + m_config.depth * 0.5f);
-
-	int ix = static_cast<int>(nx);
-	int iz = static_cast<int>(nz);
-
-	float fx = nx - ix;
-	float fz = nz - iz;
-
-	float h00 = SampleHeight(ix, iz);
-	float h10 = SampleHeight(ix + 1, iz);
-	float h01 = SampleHeight(ix, iz + 1);
-	float h11 = SampleHeight(ix + 1, iz + 1);
-
-	float h0 = h00 * (1.0f - fx) + h10 * fx;
-	float h1 = h01 * (1.0f - fx) + h11 * fx;
-
-	return (h0 * (1.0f - fz) + h1 * fz) * m_config.heightScale;
-}
-
-glm::vec3 Terrain::GetNormalAt(float x, float z) const
-{
-	float nx = (x / m_config.scale + m_config.width * 0.5f);
-	float nz = (z / m_config.scale + m_config.depth * 0.5f);
-
-	int ix = static_cast<int>(nx);
-	int iz = static_cast<int>(nz);
-
-	float fx = nx - ix;
-	float fz = nz - iz;
-
-	glm::vec3 n00 = CalculateNormal(ix, iz);
-	glm::vec3 n10 = CalculateNormal(ix + 1, iz);
-	glm::vec3 n01 = CalculateNormal(ix, iz + 1);
-	glm::vec3 n11 = CalculateNormal(ix + 1, iz + 1);
-	glm::vec3 n0 = n00 * (1.0f - fx) + n10 * fx;
-	glm::vec3 n1 = n01 * (1.0f - fx) + n11 * fx;
-	return glm::normalize(n0 * (1.0f - fz) + n1 * fz);
-}
-
-void Terrain::Draw() {
-	if (m_mesh) {
-		auto shader = m_mesh->GetMaterial()->GetShader();
-		if (shader) {
-			shader->Use();
-			shader->SetMat4("model", GetWorldMatrix());
-		}
-		m_mesh->Draw();
-	}
+	glDeleteVertexArrays(1, &m_vao);
+	glDeleteBuffers(1, &m_vbo);
+	glDeleteBuffers(1, &m_ebo);
 }

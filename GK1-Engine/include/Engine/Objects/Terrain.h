@@ -1,51 +1,41 @@
 #pragma once
-#pragma once
-#include "Engine/Objects/Mesh.h"
-#include "Engine/Resource/Material.h"
+#include "Engine/Objects/GraphicsObject.h"
 #include "Engine/Resource/Texture.h"
+#include "Engine/Resource/Shader.h"
+#include "Engine/Resource/Material.h"
+#include "Engine/Geometry.h"
+#include <memory>
 
 class Terrain : public GraphicsObject {
 public:
-	struct TerrainConfig {
-		uint32_t width{ 256 };
-		uint32_t depth{ 256 };
-		float scale{ 1.0f };
-		float heightScale{ 50.0f };
-		float uvScale{ 1.0f };
-	};
-
-	Terrain();
-	explicit Terrain(const TerrainConfig &config);
+	Terrain(uint32_t gridSize = 64);
 	~Terrain() override;
 
-	static std::shared_ptr<Terrain> CreateFromHeightmap(const std::shared_ptr<Texture> &heightmap);
-	void SetHeightData(const std::vector<float> &heightData, uint32_t width, uint32_t depth);
-
-	void SetMaterial(std::shared_ptr<Material> material) { m_mesh->SetMaterial(material); }
-	std::shared_ptr<Material> GetMaterial() const { return m_mesh->GetMaterial(); }
-
-	std::shared_ptr<Mesh> GetMesh() const { return m_mesh; }
-
-	// Set/get scale, height scale, and UV scale then recreate the geometry
-	void SetWorldScale(float scale);	
-	float GetWorldScale() const { return m_config.scale; }
-	void SetHeightScale(float heightScale);
-	float GetHeightScale() const { return m_config.heightScale; }
-	void SetUVScale(float uvScale);
-	float GetUVScale() const { return m_config.uvScale; }
-
-
-	float GetHeightAt(float x, float z) const;
-	glm::vec3 GetNormalAt(float x, float z) const;
-
 	void Draw() override;
-	void CreateGeometry();
+
+	void SetHeightmap(std::shared_ptr<Texture> heightmap) { m_heightmap = heightmap; m_dirty = true; }
+	void SetTessellationLevel(float level) { m_tessLevel = level; }
+	void SetHeightScale(float scale) { m_heightScale = scale; }
+	void SetWorldScale(float scale) { m_WorldScale = scale; m_dirty = true; }
+	void SetMaterial(std::shared_ptr<Material> material) { m_material = material; }
+	std::shared_ptr<Material> GetMaterial() const { return m_material; }
 
 private:
-	float SampleHeight(int x, int z) const;
-	glm::vec3 CalculateNormal(int x, int z) const;
+	void SetupGeometry();
+	void Cleanup();
 
-	TerrainConfig m_config;
-	std::shared_ptr<Mesh> m_mesh;
-	std::vector<float> m_heightData;
+	std::shared_ptr<Texture> m_heightmap;
+	std::shared_ptr<Material> m_material;
+
+	GLuint m_vao;
+	GLuint m_vbo;
+	GLuint m_ebo;
+
+	uint32_t m_gridSize;
+	float m_tessLevel;
+	float m_heightScale;
+	float m_WorldScale;
+	bool m_dirty;
+	std::vector<Geometry::Vertex> m_vertices;
+	std::vector<uint32_t> m_indices;
 };

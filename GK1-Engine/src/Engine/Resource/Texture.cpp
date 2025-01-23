@@ -24,7 +24,14 @@ std::shared_ptr<Texture> Texture::LoadFromFile(const std::string &path, Texture:
 	texture->m_type = type;
 
 	stbi_set_flip_vertically_on_load(true);
-	texture->m_data = stbi_load(path.c_str(), &texture->m_width, &texture->m_height, &texture->m_channels, 0);
+	if (type == TextureType::Height)
+	{
+		texture->m_data = (uint8_t*)stbi_load_16(path.c_str(), &texture->m_width, &texture->m_height, &texture->m_channels, 0);
+	}
+	else
+	{
+		texture->m_data = stbi_load(path.c_str(), &texture->m_width, &texture->m_height, &texture->m_channels, 0);
+	}
 
 	if (!texture->m_data)
 	{
@@ -40,6 +47,10 @@ std::shared_ptr<Texture> Texture::LoadFromFile(const std::string &path, Texture:
 	};
 	texture->m_format = channelMap[texture->m_channels];
 	texture->m_internalFormat = texture->m_format;
+	if (type == TextureType::Height)
+	{
+		texture->m_internalFormat = GL_R16;
+	}
 
 	glGenTextures(1, &texture->m_textureID);
 	glBindTexture(GL_TEXTURE_2D, texture->m_textureID);
@@ -50,7 +61,7 @@ std::shared_ptr<Texture> Texture::LoadFromFile(const std::string &path, Texture:
 	glPixelStorei(GL_UNPACK_SKIP_ROWS, 0);
 
 	glTexImage2D(GL_TEXTURE_2D, 0, texture->m_internalFormat, texture->m_width,
-				 texture->m_height, 0, texture->m_format, GL_UNSIGNED_BYTE, texture->m_data);
+				 texture->m_height, 0, texture->m_format, (type != TextureType::Height) ? GL_UNSIGNED_BYTE : GL_SHORT, texture->m_data);
 
 	if (generateMipMaps)
 	{

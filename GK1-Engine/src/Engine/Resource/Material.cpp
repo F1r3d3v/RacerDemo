@@ -121,10 +121,6 @@ void main()
 Material::Material() : m_properties{}
 {
 	auto shader = Shader::LoadFromString(kDefaultVertexShader, kDefaultFragmentShader);
-	unsigned int uniformMatricesBlockIndex = glGetUniformBlockIndex(shader->GetID(), "Matrices");
-	glUniformBlockBinding(shader->GetID(), uniformMatricesBlockIndex, 0);
-	unsigned int uniformLightsBlockIndex = glGetUniformBlockIndex(shader->GetID(), "Lights");
-	glUniformBlockBinding(shader->GetID(), uniformLightsBlockIndex, 1);
 	SetShader(shader);
 }
 
@@ -139,6 +135,10 @@ Material::~Material()
 
 void Material::SetShader(std::shared_ptr<Shader> shader)
 {
+	unsigned int uniformMatricesBlockIndex = glGetUniformBlockIndex(shader->GetID(), "Matrices");
+	glUniformBlockBinding(shader->GetID(), uniformMatricesBlockIndex, 0);
+	unsigned int uniformLightsBlockIndex = glGetUniformBlockIndex(shader->GetID(), "Lights");
+	glUniformBlockBinding(shader->GetID(), uniformLightsBlockIndex, 1);
 	m_shader = shader;
 }
 
