@@ -3,6 +3,7 @@
 #include "Engine/Objects/SceneNode.h"
 #include "Engine/Objects/Camera.h"
 #include "Engine/Objects/Light/LightManager.h"
+#include "Engine/Objects/Skybox.h"
 
 #include <memory>
 #include <glad/gl.h>
@@ -14,6 +15,8 @@ public:
 
 	void SetCamera(std::shared_ptr<Camera> camera);
 	std::shared_ptr<Camera> GetCamera() const;
+	void SetSkybox(std::shared_ptr<Skybox> skybox);
+	std::shared_ptr<Skybox> GetSkybox() const;
 	std::shared_ptr<SceneNode> GetRoot() const;
 	std::shared_ptr<SceneNode> AddObject(std::shared_ptr<GraphicsObject> obj, SceneNode *parent = nullptr);
 	void AddLight(std::shared_ptr<Light> light, SceneNode *parent = nullptr);
@@ -24,4 +27,5 @@ private:
 	LightManager m_lightManager;
 	std::shared_ptr<SceneNode> m_root;
 	std::shared_ptr<Camera> m_camera;
+	std::shared_ptr<Skybox> m_skybox;
 };

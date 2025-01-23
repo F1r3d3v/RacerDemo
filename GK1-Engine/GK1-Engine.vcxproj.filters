@@ -158,9 +158,6 @@
     <ClCompile Include="src\Engine\Renderer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Engine\ResourceManager.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\Engine\Transform.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

@@ -149,6 +149,12 @@ void Shader::Use() const
 	glUseProgram(m_shaderProgram);
 }
 
+void Shader::BindUBO(const std::string &name, GLuint index)
+{
+	unsigned int uniformBlockIndex = glGetUniformBlockIndex(GetID(), name.c_str());
+	glUniformBlockBinding(GetID(), uniformBlockIndex, index);
+}
+
 GLint Shader::GetUniformLocation(const std::string &name)
 {
 	auto it = m_uniformLocations.find(name);

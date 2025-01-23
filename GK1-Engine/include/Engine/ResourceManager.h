@@ -10,7 +10,11 @@
 
 class ResourceManager {
 public:
-	static ResourceManager &GetInstance();
+	static ResourceManager &Get()
+	{
+		static ResourceManager instance;
+		return instance;
+	}
 
 	template<IsResource T>
 	void Add(const std::string &name, std::shared_ptr<T> resource)
@@ -37,7 +41,7 @@ public:
 	}
 
 	template<IsResource T>
-	std::shared_ptr<T> Get(const std::string &name)
+	std::shared_ptr<T> Load(const std::string &name)
 	{
 		auto typeIndex = std::type_index(typeid(T));
 		auto mapIt = m_resources.find(typeIndex);
@@ -59,11 +63,11 @@ public:
 	}
 
 	template<IsResource T>
-	std::shared_ptr<T> TryGet(const std::string &name) noexcept
+	std::shared_ptr<T> TryLoad(const std::string &name) noexcept
 	{
 		try
 		{
-			return Get<T>(name);
+			return Load<T>(name);
 		}
 		catch (...)
 		{

@@ -3,6 +3,7 @@
 #include <glm/glm.hpp>
 #include "Window.h"
 #include "Renderer.h"
+#include "ResourceManager.h"
 
 class App
 {
@@ -15,6 +16,7 @@ public:
 
 protected:
 	virtual void OnStart() = 0;
+	virtual void OnLoad(ResourceManager *rm) = 0;
 	virtual void OnUpdate(float deltaTime) = 0;
 	virtual void OnRender(Renderer* renderer) = 0;
 	virtual void OnImGuiRender() = 0;
@@ -39,6 +41,7 @@ private:
 	bool m_IsVsync = true;
 	Window *m_Window;
 	Renderer *m_Renderer;
+	ResourceManager *m_ResourceManager;
 
 	int frameCount = 0;
 };

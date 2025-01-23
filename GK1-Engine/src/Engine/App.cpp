@@ -16,6 +16,7 @@ App::App(std::string title, int width, int height)
 
 	Log::Info("Creating window");
 	m_Window = new Window(width, height, title);
+	m_ResourceManager = &ResourceManager::Get();
 
 	// Register resize callback
 	glfwSetWindowUserPointer(m_Window->GetHandle(), this);
@@ -59,6 +60,8 @@ App::~App()
 void App::Run()
 {
 	ImGuiIO &io = ImGui::GetIO(); (void)io;
+
+	OnLoad(m_ResourceManager);
 
 	OnStart();
 

@@ -15,14 +15,13 @@
 #include "Config.h"
 
 static std::unique_ptr<Scene> scene;
-static std::shared_ptr<Skybox> skybox;
+static std::shared_ptr<Camera> cameras[3];
+static std::shared_ptr<PointLight> light2;
 static std::shared_ptr<Model> model1;
 static std::shared_ptr<Model> model2;
-static std::shared_ptr<Terrain> terrain;
 
 static glm::vec3 cubeRot = glm::vec3(0.0f);
 static glm::vec3 cubePos = glm::vec3(0.0f);
-static glm::vec3 rot;
 
 MyApp::MyApp(std::string title, int width, int height)
 	: App(title, width, height)
@@ -40,8 +39,61 @@ void MyApp::OnStart()
 
 	scene = std::make_unique<Scene>();
 
-	// Load skybox
-	skybox = Skybox::LoadFromFiles(
+	auto skybox = std::make_shared<Skybox>();
+	skybox->SetCubemap(ResourceManager::Get().Load<Texture>("SkyboxDay"));
+	skybox->SetNightCubemap(ResourceManager::Get().Load<Texture>("SkyboxNight"));
+	scene->SetSkybox(skybox);
+
+	cameras[0] = std::make_shared<Camera>();
+	cameras[1] = std::make_shared<Camera>();
+	cameras[2] = std::make_shared<Camera>();
+
+	cameras[0]->SetPosition(glm::vec3(0.0f, 0.0f, 0.0f));
+	cameras[0]->LookAt(glm::vec3(0.0f, 0.0f, 1.0f));
+	cameras[0]->SetPerspective(45.0f, (float)Config::WINDOW_WIDTH / Config::WINDOW_HEIGHT, 0.1f, 2000.0f);
+
+	cameras[1]->SetPosition(glm::vec3(0.0f, 0.0f, 0.0f));
+	cameras[1]->SetPerspective(45.0f, (float)Config::WINDOW_WIDTH / Config::WINDOW_HEIGHT, 0.1f, 2000.0f);
+
+	cameras[2]->SetPosition(glm::vec3(-32.0f, 16.0f, 16.0f));
+	cameras[2]->SetPerspective(60.0f, (float)Config::WINDOW_WIDTH / Config::WINDOW_HEIGHT, 0.1f, 2000.0f);
+
+	scene->SetCamera(cameras[0]);
+
+	model1 = Model::LoadFromFile("assets/models/ball/ball.obj");
+	model1->SetPosition(glm::vec3(5.0f, 0.0f, 0.0f));
+	auto node1 = scene->AddObject(model1);
+
+	model2 = Model::LoadFromFile("assets/models/eye/eyeball.obj");
+	model2->SetPosition(glm::vec3(0.0f, 5.0f, 0.0f));
+	model2->SetScale(glm::vec3(0.5f));
+	auto node2 = scene->AddObject(model2, node1.get());
+
+	auto light = std::make_shared<PointLight>(Light::Properties{ glm::vec3(0.8f), 1.0f, 100.0f });
+	light->SetPosition(glm::vec3(0.0f, 0.0f, 0.0f));
+	scene->AddLight(light);
+	cameras[2]->LookAt(light->GetPosition());
+
+	light2 = std::make_shared<SpotLight>(Light::Properties{ glm::vec3(1.0f, 0.0f, 0.0f), 1.0f, 100.0f });
+	light2->LookAt(glm::vec3(0.0f, -1.0f, 0.0f));
+	scene->AddLight(light2, node1.get());
+
+	auto terrain = std::make_shared<Terrain>();
+	terrain->SetHeightmap(ResourceManager::Get().Load<Texture>("TerrainHeight"));
+	auto shader = terrain->GetMaterial()->GetShader();
+	auto mat = ResourceManager::Get().Load<Material>("TerrainMaterial");
+	mat->SetShader(shader);
+	terrain->SetMaterial(mat);
+	terrain->SetHeightScale(128.0);
+	terrain->SetWorldScale(0.5);
+	terrain->SetPosition({ 0.0f, -15, 0.0f });
+
+	scene->AddObject(terrain);
+}
+
+void MyApp::OnLoad(ResourceManager *rm)
+{
+	rm->Add<Texture>("SkyboxDay", Texture::CreateCubemap(
 		{
 			"assets/textures/skybox/miramar/front.tga",
 			"assets/textures/skybox/miramar/back.tga",
@@ -50,47 +102,26 @@ void MyApp::OnStart()
 			"assets/textures/skybox/miramar/right.tga",
 			"assets/textures/skybox/miramar/left.tga",
 		}
-	);
-	auto shader = Shader::LoadFromFile("assets/shaders/skybox.vert", "assets/shaders/skybox.frag");
-	unsigned int uniformBlockIndex = glGetUniformBlockIndex(shader->GetID(), "Matrices");
-	glUniformBlockBinding(shader->GetID(), uniformBlockIndex, 0);
-	skybox->SetShader(shader);
+		));
 
-	// Set camera properties
-	auto camera = std::make_shared<Camera>();
-	camera->SetPosition(glm::vec3(0.0f, 0.0f, 0.0f));
-	camera->LookAt(glm::vec3(0.0f, 0.0f, -1.0f));
-	camera->SetPerspective(45.0f, (float)Config::WINDOW_WIDTH / Config::WINDOW_HEIGHT, 0.1f, 2000.0f);
-	scene->SetCamera(camera);
+	rm->Add<Texture>("SkyboxNight", Texture::CreateCubemap(
+		{
+			"assets/textures/skybox/night/right.png",
+			"assets/textures/skybox/night/left.png",
+			"assets/textures/skybox/night/top.png",
+			"assets/textures/skybox/night/bottom.png",
+			"assets/textures/skybox/night/back.png",
+			"assets/textures/skybox/night/front.png",
+		}
+		));
 
-	model1 = Model::LoadFromFile("assets/models/ball/ball.obj");
-	model1->SetPosition(glm::vec3(5.0f, 0.0f, 0.0f));
-	model1->SetRotation(glm::vec3(0.0f, 00.0f, 0.0f));
-	model1->SetScale(glm::vec3(0.5f));
-	auto node1 = scene->AddObject(model1);
+	rm->Add<Texture>("TerrainHeight", Texture::LoadFromFile("assets/textures/terrain/terrain_height.png", Texture::TextureType::Height, false));
+	rm->Add<Texture>("TerrainDiffuse", Texture::LoadFromFile("assets/textures/terrain/terrain_diffuse.png"));
 
-	model2 = Model::LoadFromFile("assets/models/eye/eyeball.obj");
-	model2->SetPosition(glm::vec3(0.0f, 5.0f, 0.0f));
-	model2->SetScale(glm::vec3(0.5f));
-	scene->AddObject(model2, node1.get());
-
-	auto light = std::make_shared<PointLight>(Light::Properties{ glm::vec3(1.0f), 1.0f, 100.0f });
-	light->SetPosition(glm::vec3(0.0f, 5.0f, 10.0f));
-	scene->AddLight(light);
-
-	auto heightmap = Texture::LoadFromFile("assets/textures/terrain1/terrain_height.png", Texture::TextureType::Height, false);
-	terrain = std::make_shared<Terrain>();
-	terrain->SetHeightmap(heightmap);
-	auto material = terrain->GetMaterial();
-	material->SetProperties({ glm::vec3(0.1f), glm::vec3(1.0f), glm::vec3(1.0f), 256 });
-	auto tex = Texture::LoadFromFile("assets/textures/terrain1/terrain_diffuse.png");
-	material->AddTexture(Texture::TextureType::Ambient, tex);
-	material->AddTexture(Texture::TextureType::Diffuse, tex);
-	terrain->SetHeightScale(128.0);
-	terrain->SetWorldScale(0.5);
-	terrain->SetPosition({ 0.0f, -24, 0.0f });
-
-	scene->AddObject(terrain);
+	auto mat = rm->Create<Material>("TerrainMaterial");
+	mat->SetProperties({ glm::vec3(0.25f), glm::vec3(1.0f), glm::vec3(1.0f), 256 });
+	mat->AddTexture(Texture::TextureType::Ambient, rm->Load<Texture>("TerrainDiffuse"));
+	mat->AddTexture(Texture::TextureType::Diffuse, rm->Load<Texture>("TerrainDiffuse"));
 }
 
 void MyApp::OnUpdate(float deltaTime)
@@ -101,13 +132,12 @@ void MyApp::OnUpdate(float deltaTime)
 	if (Input::IsKeyPressed(GLFW_KEY_F1))
 		SetWireframe(!GetWireframe());
 
-	terrain->SetRotation(rot);
-
+	cameras[1]->LookAt(model1->GetPosition());
 	auto camera = scene->GetCamera();
 
 	// Cube pos and rot
-	cubePos.x = 5.0f * (float)glm::sin(glfwGetTime()/2);
-	cubePos.z = 5.0f * (float)glm::cos(glfwGetTime()/2);
+	cubePos.x = 5.0f * (float)glm::sin(glfwGetTime() / 2);
+	cubePos.z = 5.0f * (float)glm::cos(glfwGetTime() / 2);
 	cubePos.y = 0.0f;
 	cubeRot.y += 30.0f * deltaTime;
 	cubeRot.x += 30.0f * deltaTime;
@@ -150,7 +180,7 @@ void MyApp::OnUpdate(float deltaTime)
 		float sensitivity = 0.1f;
 		mouseDelta *= sensitivity;
 
-		camera->Rotate(glm::vec3(-mouseDelta.y, -mouseDelta.x, 0.0f));
+		camera->Rotate(glm::vec3(-mouseDelta.y, mouseDelta.x, 0.0f));
 	}
 }
 
@@ -162,7 +192,6 @@ void MyApp::OnRender(Renderer *renderer)
 	model2->SetRotation(glm::cross(glm::vec3(2.0f), cubeRot));
 
 	scene->Draw(renderer);
-	skybox->Draw();
 }
 
 void MyApp::OnImGuiRender()
@@ -174,8 +203,55 @@ void MyApp::OnImGuiRender()
 	ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x, 0), ImGuiCond_Always, ImVec2(1.0f, 0.0f));
 	ImGui::Begin("Control Panel", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize);
 
-	// Rotation
-	ImGui::SliderFloat3("Rot", &rot[0], -90.0f, 90.0f);
+	// Set Camera index via combo
+	ImGui::Text("Camera");
+	if (ImGui::Combo("##Camera", &m_SelectedCamera, "Camera 1\0Camera 2\0Camera 3\0"))
+		scene->SetCamera(cameras[m_SelectedCamera]);
+
+	// Write as text Camera position, rotation and FOV
+	auto camera = scene->GetCamera();
+	auto pos = camera->GetPosition();
+	auto rot = camera->GetRotation();
+	auto fov = camera->GetFov();
+	ImGui::Text("Position: %.2f %.2f %.2f", pos.x, pos.y, pos.z);
+	ImGui::Text("Rotation: %.2f %.2f %.2f", rot.x, rot.y, rot.z);
+	ImGui::Text("FOV: %.2f", fov);
+
+	// Write as text Model position and rotation
+	auto modelPos = model2->GetWorldPosition();
+	auto modelRot = model2->GetRotation();
+	ImGui::Text("Model Position: %.2f %.2f %.2f", modelPos.x, modelPos.y, modelPos.z);
+	ImGui::Text("Model Rotation: %.2f %.2f %.2f", modelRot.x, modelRot.y, modelRot.z);
+
+	// Change camera perspective
+	if (ImGui::CollapsingHeader("Camera Settings"))
+	{
+		float nearPlane = camera->GetNearPlane();
+		float farPlane = camera->GetFarPlane();
+		if (ImGui::SliderFloat("FOV", &fov, 30.0f, 120.0f))
+			camera->SetFov(fov);
+		if (ImGui::SliderFloat("Near Plane", &nearPlane, 0.1f, 100.0f))
+			camera->SetPerspective(camera->GetFov(), camera->GetAspectRatio(), nearPlane, camera->GetFarPlane());
+		if (ImGui::SliderFloat("Far Plane", &farPlane, 1.0f, 2000.0f))
+			camera->SetPerspective(camera->GetFov(), camera->GetAspectRatio(), camera->GetNearPlane(), farPlane);
+
+		// Toggle wireframe
+		bool wireframe = GetWireframe();
+		if (ImGui::Checkbox("Wireframe", &wireframe))
+			SetWireframe(wireframe);
+	}
+
+	if (ImGui::CollapsingHeader("Day/Night"))
+	{
+		ImGui::PushID("Day/Night");
+		float blendFactor = scene->GetSkybox()->GetBlendFactor();
+		if (ImGui::SliderFloat("Day Time", &blendFactor, 0.0f, 1.0f))
+		{
+			scene->GetSkybox()->SetBlendFactor(blendFactor);
+		}
+		ImGui::PopID();
+	}
+
 
 	ImGui::SetWindowSize(ImVec2(ImGui::GetWindowWidth(), 0.0));
 	ImGui::End();

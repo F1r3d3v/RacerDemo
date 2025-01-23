@@ -92,9 +92,20 @@ void Camera::Rotate(const glm::vec3 &angles)
 	m_viewChanged = true;
 }
 
+void Camera::LookAt(const glm::vec3 &target, const glm::vec3 &up, const glm::vec3 &altUp)
+{
+	Transform::LookAt(target, up, altUp);
+	m_viewChanged = true;
+}
+
 Camera::ProjectionType Camera::GetProjectionType() const
 {
 	return m_Type;
+}
+
+float Camera::GetAspectRatio() const
+{
+	return m_aspectRatio;
 }
 
 float Camera::GetFov() const

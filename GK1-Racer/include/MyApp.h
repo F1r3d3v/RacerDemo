@@ -9,6 +9,7 @@ public:
 	MyApp(std::string title, int width, int height);
 	~MyApp();
 	void OnStart() override;
+	void OnLoad(ResourceManager *rm) override;
 	void OnUpdate(float deltaTime) override;
 	void OnRender(Renderer* renderer) override;
 	void OnImGuiRender() override;

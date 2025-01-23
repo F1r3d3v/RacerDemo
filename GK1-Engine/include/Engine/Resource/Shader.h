@@ -26,6 +26,7 @@ public:
 	bool Link();
 	void Use() const;
 
+	void BindUBO(const std::string &name, GLuint index);
 	void SetBool(const std::string &name, bool value);
 	void SetInt(const std::string &name, int value);
 	void SetFloat(const std::string &name, float value);

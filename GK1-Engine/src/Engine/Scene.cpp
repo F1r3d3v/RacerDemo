@@ -11,6 +11,16 @@ std::shared_ptr<Camera> Scene::GetCamera() const {
 	return m_camera;
 }
 
+void Scene::SetSkybox(std::shared_ptr<Skybox> skybox)
+{
+	m_skybox = skybox;
+}
+
+std::shared_ptr<Skybox> Scene::GetSkybox() const
+{
+	return m_skybox;
+}
+
 std::shared_ptr<SceneNode> Scene::GetRoot() const {
 	return m_root;
 }
@@ -26,6 +36,8 @@ void Scene::Draw(Renderer *renderer) {
 	m_lightManager.UpdateLights();
 
 	m_root->Draw();
+	if (m_skybox)
+		m_skybox->Draw();
 }
 
 std::shared_ptr<SceneNode> Scene::AddObject(std::shared_ptr<GraphicsObject> obj, SceneNode *parent) {

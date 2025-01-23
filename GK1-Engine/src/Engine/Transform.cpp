@@ -3,12 +3,15 @@
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/matrix_decompose.hpp>
 #include <glm/gtx/euler_angles.hpp>
-#include <glm/gtc/quaternion.hpp>
+#include <glm/gtx/quaternion.hpp>
 
 Transform::Transform()
 	: m_position(0.0f)
+	, m_worldPosition(0.0f)
 	, m_rotation(0.0f)
+	, m_worldRotation(0.0f)
 	, m_scale(1.0f)
+	, m_worldScale(1.0f)
 	, m_forward(0.0f, 0.0f, -1.0f)
 	, m_right(1.0f, 0.0f, 0.0f)
 	, m_up(0.0f, 1.0f, 0.0f)
@@ -20,6 +23,21 @@ Transform::Transform()
 
 Transform::~Transform()
 {
+}
+
+glm::vec3 Transform::GetWorldPosition() const
+{
+	return m_worldPosition;
+}
+
+glm::vec3 Transform::GetWorldRotation() const
+{
+	return m_worldRotation;
+}
+
+glm::vec3 Transform::GetWorldScale() const
+{
+	return m_worldScale;
 }
 
 void Transform::SetPosition(const glm::vec3 &position)
@@ -39,12 +57,25 @@ glm::vec3 Transform::GetPosition() const
 	return m_position;
 }
 
-void Transform::LookAt(const glm::vec3 &target, const glm::vec3 &up)
+void Transform::LookAt(const glm::vec3 &target, const glm::vec3 &up, const glm::vec3 &altUp)
 {
 	glm::vec3 direction = glm::normalize(target - m_position);
-	glm::quat rotation = glm::quatLookAt(direction, up);
-	m_rotation = glm::eulerAngles(rotation);
-	SetRotation(glm::degrees(m_rotation));
+	glm::vec3 right;
+	float dot = glm::dot(direction, up);
+	if (glm::abs(dot) > .9999f)
+		right = glm::normalize(glm::cross(direction, (dot < 0.0f) ? -altUp : altUp));
+	else
+		right = glm::normalize(glm::cross(direction, up));
+	glm::vec3 newUp = glm::cross(right, direction);
+
+	glm::mat3 rotationMatrix = glm::inverse(glm::mat3(glm::lookAt(m_position, m_position + direction, newUp)));
+	m_rotation = GetRotation(rotationMatrix);
+
+	m_forward = -glm::vec3(rotationMatrix[2]);
+	m_right = glm::vec3(rotationMatrix[0]);
+	m_up = glm::vec3(rotationMatrix[1]);
+
+	m_transformChanged = true;
 }
 
 void Transform::SetRotation(const glm::vec3 &rotation)
@@ -86,11 +117,22 @@ glm::vec3 Transform::GetScale() const
 void Transform::UpdateState()
 {
 	glm::vec3 radians = glm::radians(m_rotation);
-	glm::mat4 rotationMatrix = glm::eulerAngleYXZ(radians.y, radians.x, radians.z);
+	glm::mat4 rotationMatrix = glm::eulerAngleYXZ(-radians.y, radians.x, radians.z);
 
 	m_forward = -glm::vec3(rotationMatrix[2]);
 	m_right = glm::vec3(rotationMatrix[0]);
 	m_up = glm::vec3(rotationMatrix[1]);
+}
+
+glm::vec3 Transform::GetRotation(glm::mat3 rotationMatrix) const
+{
+	glm::vec3 rotation;
+
+	rotation.y = std::atan2(-rotationMatrix[0][2], rotationMatrix[0][0]);
+	rotation.x = -std::atan2(-rotationMatrix[1][2], std::sqrt(rotationMatrix[0][2] * rotationMatrix[0][2] + rotationMatrix[2][2] * rotationMatrix[2][2]));
+	rotation.z = std::atan2(rotationMatrix[1][0], rotationMatrix[1][1]);
+
+	return glm::degrees(rotation);
 }
 
 glm::mat4 Transform::GetModelMatrix() const
@@ -117,7 +159,13 @@ glm::mat4 Transform::GetWorldMatrix() const
 
 void Transform::SetWorldMatrix(const glm::mat4 &matrix)
 {
+	if (m_worldMatrix == matrix) return;
 	m_worldMatrix = matrix;
+	glm::vec3 skew;
+	glm::vec4 perspective;
+	glm::quat rotation;
+	glm::decompose(matrix, m_worldScale, rotation, m_worldPosition, skew, perspective);
+	m_worldRotation = glm::degrees(glm::eulerAngles(rotation));
 }
 
 glm::vec3 Transform::GetForward() const

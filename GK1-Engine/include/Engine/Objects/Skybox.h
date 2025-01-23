@@ -15,8 +15,13 @@ public:
 	void Draw() override;
 
 	void SetShader(std::shared_ptr<Shader> shader) { m_shader = shader; }
-	void SetCubemap(std::shared_ptr<Texture> cubemap) { m_cubemap = cubemap; }
-	std::shared_ptr<Texture> GetCubemap() const { return m_cubemap; }
+	void SetCubemap(std::shared_ptr<Texture> cubemap) { m_dayCubemap = cubemap; }
+	void SetNightCubemap(std::shared_ptr<Texture> cubemap) { m_nightCubemap = cubemap; }
+	std::shared_ptr<Texture> GetCubemap() const { return m_dayCubemap; }
+	std::shared_ptr<Texture> GetNightCubemap() const { return m_nightCubemap; }
+
+	void SetBlendFactor(float factor) { m_blendFactor = factor; }
+	float GetBlendFactor() const { return m_blendFactor; }
 
 private:
 	void SetupGeometry();
@@ -24,6 +29,8 @@ private:
 
 	GLuint m_vao;
 	GLuint m_vbo;
-	std::shared_ptr<Texture> m_cubemap;
+	std::shared_ptr<Texture> m_dayCubemap;
+	std::shared_ptr<Texture> m_nightCubemap;
+	float m_blendFactor = 1.0f;
 	std::shared_ptr<Shader> m_shader;
 };

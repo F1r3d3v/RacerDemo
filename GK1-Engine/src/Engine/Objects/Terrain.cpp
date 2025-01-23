@@ -107,7 +107,7 @@ vec3 calcNormal(vec2 texCoord)
 	float down = textureOffset(heightMap, texCoord, off.yx).r * heightScale;
 	float up = textureOffset(heightMap, texCoord, off.yz).r * heightScale;
 
-    return normalize(vec3(left - right, 2.0, down - up));
+    return normalize(vec3(left - right, 2.0, up - down));
 }
 
 void main() {
@@ -190,7 +190,7 @@ vec3 CalcLight(Light light, vec3 normal, vec3 fragPos, vec3 viewPos)
                         light.attenuation.z * distance * distance);
         
 	if (light.direction.w > 0.0) {
-		intensity *= pow(dot(normalize(-light.direction.xyz), lightDir), light.direction.w);
+		intensity *= pow(max(dot(normalize(-light.direction.xyz), lightDir), 0.0), light.direction.w);
 	}
     
     // Diffuse
@@ -222,7 +222,7 @@ void main()
         result += CalcLight(lights.spotLights[i], Normal, fs_in.fragPos, fs_in.viewPos);
     }
     
-	FragColor = vec4(Normal, 1.0);
+	FragColor = vec4(result, 1.0);
 }
 )";
 
@@ -268,7 +268,7 @@ void Terrain::SetupGeometry()
 		{
 			Geometry::Vertex vertex;
 			vertex.position = glm::vec3(width * (x * spacing - 0.5f), 0.0f, height * (z * spacing - 0.5f)) * m_WorldScale;
-			vertex.texCoords = glm::vec2(x * spacing, z * spacing);
+			vertex.texCoords = glm::vec2(x * spacing, 1.0 - z * spacing);
 			m_vertices.push_back(vertex);
 		}
 	}

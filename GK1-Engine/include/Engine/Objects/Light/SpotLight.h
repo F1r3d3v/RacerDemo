@@ -9,7 +9,7 @@ public:
 		: PointLight(props, attn), m_focusExponent(focus)
 	{}
 
-	void SetFocus(float exponent) { m_focusExponent = std::max(exponent, 1.0f); }
+	void SetFocus(float exponent) { m_focusExponent = std::min(exponent, 1.0f); }
 	float GetFocus() const { return m_focusExponent; }
 
 protected:

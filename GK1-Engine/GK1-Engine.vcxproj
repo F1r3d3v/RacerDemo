@@ -156,7 +156,6 @@
     <ClCompile Include="src\Engine\Objects\SceneNode.cpp" />
     <ClCompile Include="src\Engine\Objects\Terrain.cpp" />
     <ClCompile Include="src\Engine\Renderer.cpp" />
-    <ClCompile Include="src\Engine\ResourceManager.cpp" />
     <ClCompile Include="src\Engine\Resource\Material.cpp" />
     <ClCompile Include="src\Engine\Geometry.cpp" />
     <ClCompile Include="src\Engine\Objects\Model.cpp" />

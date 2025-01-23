@@ -82,7 +82,7 @@ vec3 CalcLight(Light light, vec3 normal, vec3 fragPos, vec3 viewPos) {
                         light.attenuation.z * distance * distance);
         
 	if (light.direction.w > 0.0) {
-		intensity *= pow(dot(normalize(-light.direction.xyz), lightDir), light.direction.w);
+		intensity *= pow(max(dot(normalize(-light.direction.xyz), lightDir), 0.0), light.direction.w);
 	}
     
     // Diffuse

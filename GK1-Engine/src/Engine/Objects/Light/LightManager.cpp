@@ -1,13 +1,11 @@
 #include "Engine/Objects/Light/LightManager.h"
 #include <glad/gl.h>
 
-
 LightManager::LightManager()
 {
 	glGenBuffers(1, &m_ubo);
 	glBindBuffer(GL_UNIFORM_BUFFER, m_ubo);
-	GLsizei bufSize = (MAX_POINT_LIGHTS + MAX_SPOT_LIGHTS) * sizeof(Light::LightData) + sizeof(glm::ivec4);
-	glBufferData(GL_UNIFORM_BUFFER, bufSize, NULL, GL_DYNAMIC_DRAW);
+	glBufferData(GL_UNIFORM_BUFFER, sizeof(LightBuffer), NULL, GL_DYNAMIC_DRAW);
 	glBindBuffer(GL_UNIFORM_BUFFER, 0);
 	glBindBufferBase(GL_UNIFORM_BUFFER, 1, m_ubo);
 }
@@ -18,14 +16,17 @@ LightManager::~LightManager()
 }
 
 void LightManager::AddLight(std::shared_ptr<Light> light) {
-	if (auto pointLight = std::dynamic_pointer_cast<PointLight>(light)) {
-		if (m_pointLights.size() < MAX_POINT_LIGHTS) {
-			m_pointLights.push_back(pointLight);
+	if (auto spotLight = std::dynamic_pointer_cast<SpotLight>(light))
+	{
+		if (m_spotLights.size() < MAX_SPOT_LIGHTS)
+		{
+			m_spotLights.push_back(spotLight);
 		}
 	}
-	else if (auto spotLight = std::dynamic_pointer_cast<SpotLight>(light)) {
-		if (m_spotLights.size() < MAX_SPOT_LIGHTS) {
-			m_spotLights.push_back(spotLight);
+	else if (auto pointLight = std::dynamic_pointer_cast<PointLight>(light)) {
+		if (m_pointLights.size() < MAX_POINT_LIGHTS)
+		{
+			m_pointLights.push_back(pointLight);
 		}
 	}
 }
@@ -51,11 +52,7 @@ void LightManager::RemoveLight(std::shared_ptr<Light> light)
 }
 
 void LightManager::UpdateLights() {
-	struct LightBuffer {
-		Light::LightData pointLights[MAX_POINT_LIGHTS];
-		Light::LightData spotLights[MAX_SPOT_LIGHTS];
-		glm::ivec4 counts;
-	} lightBuffer;
+	LightBuffer lightBuffer;
 
 	for (size_t i = 0; i < m_pointLights.size(); i++) {
 		GetLightData(m_pointLights[i], lightBuffer.pointLights[i]);

@@ -17,7 +17,7 @@ public:
 protected:
 	void FillLightData(LightData &data) const override
 	{
-		data.position = glm::vec4(GetPosition(), 1.0f);
+		data.position = glm::vec4(GetWorldPosition(), 1.0f);
 		data.direction = glm::vec4(0.0f);
 		data.color = glm::vec4(m_properties.color, m_properties.intensity);
 		data.attenuation = glm::vec4(m_attenuation.constant, m_attenuation.linear, m_attenuation.quadratic, m_properties.radius);

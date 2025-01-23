@@ -45,10 +45,60 @@ static constexpr float kSkyboxVertices[] = {
 	 1.0f, -1.0f,  1.0f
 };
 
+static constexpr char kSkyboxVertexShader[] = R"(
+#version 330 core
+layout (location = 0) in vec3 aPos;
+
+out vec3 TexCoords;
+
+layout (std140) uniform Matrices
+{
+    mat4 view;
+    mat4 projection;
+};
+
+void main()
+{
+    TexCoords = aPos;
+    mat4 _view = mat4(mat3(view)); // Remove translation
+    vec4 pos = projection * _view * vec4(aPos, 1.0);
+    gl_Position = pos.xyww; // Set z to w so it's always 1.0
+}
+)";
+
+static constexpr char kSkyboxFragmentShader[] = R"(
+#version 330 core
+out vec4 FragColor;
+
+in vec3 TexCoords;
+
+uniform samplerCube skyboxDay;
+uniform samplerCube skyboxNight;
+uniform float blendFactor;
+uniform int hasNight;
+
+void main()
+{    
+	vec3 day = texture(skyboxDay, TexCoords).rgb;
+
+	if (hasNight == 0)
+	{
+		FragColor = vec4(day, 1.0);
+		return;
+	}
+
+	vec3 night = texture(skyboxNight, TexCoords).rgb;
+	vec3 color = mix(night, day, blendFactor);
+	FragColor = vec4(color, 1.0);
+}
+)";
+
 
 Skybox::Skybox() : m_vao(0), m_vbo(0)
 {
 	SetupGeometry();
+	m_shader = Shader::LoadFromString(kSkyboxVertexShader, kSkyboxFragmentShader);
+	m_shader->BindUBO("Matrices", 0);
 }
 
 Skybox::~Skybox()
@@ -78,7 +128,7 @@ std::shared_ptr<Skybox> Skybox::LoadFromCubemap(std::shared_ptr<Texture> cubemap
 	}
 
 	auto skybox = std::make_shared<Skybox>();
-	skybox->m_cubemap = cubemap;
+	skybox->m_dayCubemap = cubemap;
 	return skybox;
 }
 
@@ -109,7 +159,7 @@ void Skybox::SetupGeometry()
 
 void Skybox::Draw()
 {
-	if (!m_shader || !m_cubemap) return;
+	if (!m_shader || !m_dayCubemap) return;
 
 	// Store current OpenGL state
 	GLint oldCullFaceMode;
@@ -120,10 +170,17 @@ void Skybox::Draw()
 	glCullFace(GL_FRONT);
 	glDepthFunc(GL_LEQUAL);
 
-	constexpr unsigned int kSlot = 0;
+	int kSlot = 0;
 	m_shader->Use();
-	m_cubemap->Bind(kSlot);
-	m_shader->SetInt("skybox", kSlot);
+	m_dayCubemap->Bind(kSlot);
+	m_shader->SetInt("skyboxDay", kSlot);
+	m_shader->SetInt("hasNight", m_nightCubemap ? 1 : 0);
+	if (m_nightCubemap)
+	{
+		m_nightCubemap->Bind(++kSlot);
+		m_shader->SetInt("skyboxNight", kSlot);
+		m_shader->SetFloat("blendFactor", m_blendFactor);
+	}
 
 	glBindVertexArray(m_vao);
 	glDrawArrays(GL_TRIANGLES, 0, 36);
