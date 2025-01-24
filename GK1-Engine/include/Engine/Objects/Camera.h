@@ -8,7 +8,6 @@ class Camera : public Transform {
 public:
 
 	enum class ProjectionType {
-		None,
 		Perspective,
 		Orthographic
 	};
@@ -30,6 +29,7 @@ public:
 	void LookAt(const glm::vec3 &target, const glm::vec3 &up = glm::vec3(0.0f, 1.0f, 0.0f), const glm::vec3 &altUp = glm::vec3(0.0f, 0.0f, 1.0f)) override;
 
 	ProjectionType GetProjectionType() const;
+	float GetOrthographicSize() const;
 	float GetAspectRatio() const;
 	float GetFov() const;
 	float GetNearPlane() const;

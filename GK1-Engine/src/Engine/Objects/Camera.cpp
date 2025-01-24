@@ -6,14 +6,15 @@
 
 Camera::Camera() : Transform()
 , m_fieldOfView(45.0f)
-, m_aspectRatio(1.0f)
+, m_aspectRatio(16.0f/9.0f)
 , m_nearPlane(0.1f)
 , m_farPlane(1000.0f)
+, m_orthoSize(50.0f)
 , m_viewMatrix(1.0f)
 , m_projectionMatrix(1.0f)
 , m_viewChanged(true)
 , m_projectionChanged(true)
-, m_Type(ProjectionType::None)
+, m_Type(ProjectionType::Perspective)
 {
 }
 
@@ -101,6 +102,11 @@ void Camera::LookAt(const glm::vec3 &target, const glm::vec3 &up, const glm::vec
 Camera::ProjectionType Camera::GetProjectionType() const
 {
 	return m_Type;
+}
+
+float Camera::GetOrthographicSize() const
+{
+	return m_orthoSize;
 }
 
 float Camera::GetAspectRatio() const

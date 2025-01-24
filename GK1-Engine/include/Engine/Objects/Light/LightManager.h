@@ -15,6 +15,8 @@ public:
 	void AddLight(std::shared_ptr<Light> light);
 	void RemoveLight(std::shared_ptr<Light> light);
 	void UpdateLights();
+	void SetAmbientIntensity(glm::vec3 intensity) { m_ambientIntensity = intensity; }
+	glm::vec3 GetAmbientIntensity() { return m_ambientIntensity; }
 	GLuint GetLightsUBO() const { return m_ubo; }
 
 private:
@@ -24,9 +26,11 @@ private:
 		Light::LightData pointLights[MAX_POINT_LIGHTS];
 		Light::LightData spotLights[MAX_SPOT_LIGHTS];
 		glm::ivec4 counts;
+		glm::vec4 ambientIntensity;
 	};
 
 	GLuint m_ubo;
+	glm::vec3 m_ambientIntensity;
 	std::vector<std::shared_ptr<PointLight>> m_pointLights;
 	std::vector<std::shared_ptr<SpotLight>> m_spotLights;
 };

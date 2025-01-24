@@ -14,7 +14,6 @@ public:
 	struct RenderState
 	{
 		glm::vec4 clearColor;
-		glm::vec3 ambientColor;
 		// std::shared_ptr<Scene> scene;
 		std::shared_ptr<Camera> camera;
 	};
@@ -27,12 +26,13 @@ public:
 	void SetWireframe(bool enabled);
 	bool GetWireframe() const;
 	GLuint GetDepthBuffer() const { return m_DepthBuffer; }
-	GLuint GetMatricesUBO() const { return m_ubo; }
+	GLuint GetMatricesUBO() const { return m_matricesUBO; }
+	GLuint GetFogUBO() const { return m_fogUBO; }
 	static glm::vec2 GetViewportSize();
 
 private:
 	static Window *m_Window;
 	GLuint m_DepthBuffer;
-	GLuint m_ubo;
+	GLuint m_matricesUBO, m_fogUBO;
 };
 

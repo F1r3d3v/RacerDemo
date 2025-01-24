@@ -119,7 +119,7 @@ void MyApp::OnLoad(ResourceManager *rm)
 	rm->Add<Texture>("TerrainDiffuse", Texture::LoadFromFile("assets/textures/terrain/terrain_diffuse.png"));
 
 	auto mat = rm->Create<Material>("TerrainMaterial");
-	mat->SetProperties({ glm::vec3(0.25f), glm::vec3(1.0f), glm::vec3(1.0f), 256 });
+	mat->SetProperties({ glm::vec3(0.7f), glm::vec3(1.0f), glm::vec3(0.1f), 8 });
 	mat->AddTexture(Texture::TextureType::Ambient, rm->Load<Texture>("TerrainDiffuse"));
 	mat->AddTexture(Texture::TextureType::Diffuse, rm->Load<Texture>("TerrainDiffuse"));
 }
@@ -226,30 +226,75 @@ void MyApp::OnImGuiRender()
 	// Change camera perspective
 	if (ImGui::CollapsingHeader("Camera Settings"))
 	{
+		bool perspective = camera->GetProjectionType() == Camera::ProjectionType::Perspective;
+		float orthographicSize = camera->GetOrthographicSize();
 		float nearPlane = camera->GetNearPlane();
 		float farPlane = camera->GetFarPlane();
-		if (ImGui::SliderFloat("FOV", &fov, 30.0f, 120.0f))
-			camera->SetFov(fov);
-		if (ImGui::SliderFloat("Near Plane", &nearPlane, 0.1f, 100.0f))
-			camera->SetPerspective(camera->GetFov(), camera->GetAspectRatio(), nearPlane, camera->GetFarPlane());
-		if (ImGui::SliderFloat("Far Plane", &farPlane, 1.0f, 2000.0f))
-			camera->SetPerspective(camera->GetFov(), camera->GetAspectRatio(), camera->GetNearPlane(), farPlane);
+
+		if (!perspective)
+		{
+			if (ImGui::SliderFloat("Orthographic Size", &orthographicSize, 1.0f, 200.0f))
+				camera->SetOrthographic(orthographicSize, camera->GetNearPlane(), camera->GetFarPlane());
+			if (ImGui::SliderFloat("Near Plane", &nearPlane, -2000.0f, 1.0f))
+				camera->SetOrthographic(camera->GetOrthographicSize(), nearPlane, camera->GetFarPlane());
+			if (ImGui::SliderFloat("Far Plane", &farPlane, 1.0f, 2000.0f))
+				camera->SetOrthographic(camera->GetOrthographicSize(), camera->GetNearPlane(), farPlane);
+		}
+		else
+		{
+			if (ImGui::SliderFloat("FOV", &fov, 30.0f, 120.0f))
+				camera->SetFov(fov);
+			if (ImGui::SliderFloat("Near Plane", &nearPlane, 0.1f, 100.0f))
+				camera->SetPerspective(camera->GetFov(), camera->GetAspectRatio(), nearPlane, camera->GetFarPlane());
+			if (ImGui::SliderFloat("Far Plane", &farPlane, 1.0f, 2000.0f))
+				camera->SetPerspective(camera->GetFov(), camera->GetAspectRatio(), camera->GetNearPlane(), farPlane);
+		}
+
 
 		// Toggle wireframe
 		bool wireframe = GetWireframe();
 		if (ImGui::Checkbox("Wireframe", &wireframe))
 			SetWireframe(wireframe);
+
+		ImGui::SameLine();
+
+		// Toggle perspective
+		if (ImGui::Checkbox("Perspective", &perspective))
+		{
+			if (perspective)
+				camera->SetPerspective(fov, camera->GetAspectRatio(), camera->GetNearPlane(), camera->GetFarPlane());
+			else
+				camera->SetOrthographic(camera->GetOrthographicSize(), camera->GetNearPlane(), camera->GetFarPlane());
+		}
 	}
 
-	if (ImGui::CollapsingHeader("Day/Night"))
+	if (ImGui::CollapsingHeader("Scene"))
 	{
-		ImGui::PushID("Day/Night");
+		ImGui::SeparatorText("Skybox");
+
 		float blendFactor = scene->GetSkybox()->GetBlendFactor();
 		if (ImGui::SliderFloat("Day Time", &blendFactor, 0.0f, 1.0f))
 		{
 			scene->GetSkybox()->SetBlendFactor(blendFactor);
+			scene->GetLightManager().SetAmbientIntensity(glm::vec3(blendFactor));
 		}
-		ImGui::PopID();
+
+		ImGui::SeparatorText("Fog");
+
+		// Fog
+		glm::vec3 fogColor;
+		float fogDensity;
+		scene->GetFog(fogColor, fogDensity);
+
+		if (ImGui::ColorEdit3("Fog Color", &fogColor.x))
+			scene->SetFog(fogColor, fogDensity);
+
+		if (ImGui::SliderFloat("Fog Density", &fogDensity, 0.0f, 1.0f))
+			scene->SetFog(fogColor, fogDensity);
+
+		bool fogEnabled = scene->IsFogEnabled();
+		if (ImGui::Checkbox("Enable Fog", &fogEnabled))
+			scene->EnableFog(fogEnabled);
 	}
 
 

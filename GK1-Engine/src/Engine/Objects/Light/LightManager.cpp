@@ -2,6 +2,7 @@
 #include <glad/gl.h>
 
 LightManager::LightManager()
+	: m_ambientIntensity(1.0f, 1.0f, 1.0f)
 {
 	glGenBuffers(1, &m_ubo);
 	glBindBuffer(GL_UNIFORM_BUFFER, m_ubo);
@@ -67,6 +68,8 @@ void LightManager::UpdateLights() {
 		static_cast<int>(m_spotLights.size()),
 		0, 0
 	);
+
+	lightBuffer.ambientIntensity = glm::vec4(m_ambientIntensity, 0.0f);
 
 	glBindBuffer(GL_UNIFORM_BUFFER, m_ubo);
 	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(LightBuffer), &lightBuffer);

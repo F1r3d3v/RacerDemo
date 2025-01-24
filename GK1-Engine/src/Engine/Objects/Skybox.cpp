@@ -77,18 +77,28 @@ uniform samplerCube skyboxNight;
 uniform float blendFactor;
 uniform int hasNight;
 
+layout (std140) uniform Fog
+{
+	vec4 color; // intensity in w
+	int enabled;
+} fog;
+
 void main()
 {    
+	vec3 color;
 	vec3 day = texture(skyboxDay, TexCoords).rgb;
 
-	if (hasNight == 0)
+	if (hasNight != 0)
 	{
-		FragColor = vec4(day, 1.0);
-		return;
+		vec3 night = texture(skyboxNight, TexCoords).rgb;
+		color = mix(night, day, blendFactor);
 	}
 
-	vec3 night = texture(skyboxNight, TexCoords).rgb;
-	vec3 color = mix(night, day, blendFactor);
+	if (fog.enabled != 0)
+	{
+		color = fog.color.rgb;
+	}
+
 	FragColor = vec4(color, 1.0);
 }
 )";
@@ -99,6 +109,7 @@ Skybox::Skybox() : m_vao(0), m_vbo(0)
 	SetupGeometry();
 	m_shader = Shader::LoadFromString(kSkyboxVertexShader, kSkyboxFragmentShader);
 	m_shader->BindUBO("Matrices", 0);
+	m_shader->BindUBO("Fog", 2);
 }
 
 Skybox::~Skybox()

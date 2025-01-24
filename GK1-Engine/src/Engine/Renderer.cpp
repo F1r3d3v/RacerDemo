@@ -24,19 +24,32 @@ Renderer::Renderer(Window *window)
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-	glGenBuffers(1, &m_ubo);
+	// Uniform Buffer Objects init
 
-	glBindBuffer(GL_UNIFORM_BUFFER, m_ubo);
+	// Common matrices
+	glGenBuffers(1, &m_matricesUBO);
+
+	glBindBuffer(GL_UNIFORM_BUFFER, m_matricesUBO);
 	GLsizei bufSize = 2 * sizeof(glm::mat4);
 	glBufferData(GL_UNIFORM_BUFFER, bufSize, NULL, GL_DYNAMIC_DRAW);
 	glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
-	glBindBufferBase(GL_UNIFORM_BUFFER, 0, m_ubo);
+	glBindBufferBase(GL_UNIFORM_BUFFER, 0, m_matricesUBO);
+
+	// Fog
+	glGenBuffers(1, &m_fogUBO);
+
+	glBindBuffer(GL_UNIFORM_BUFFER, m_fogUBO);
+	bufSize = sizeof(glm::vec4) + sizeof(int);
+	glBufferData(GL_UNIFORM_BUFFER, bufSize, NULL, GL_DYNAMIC_DRAW);
+	glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+	glBindBufferBase(GL_UNIFORM_BUFFER, 2, m_fogUBO);
 }
 
 Renderer::~Renderer()
 {
-	glDeleteBuffers(1, &m_ubo);
+	glDeleteBuffers(1, &m_matricesUBO);
 	glDeleteRenderbuffers(1, &m_DepthBuffer);
 }
 

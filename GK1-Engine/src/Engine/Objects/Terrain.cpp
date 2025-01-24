@@ -174,7 +174,23 @@ layout (std140) uniform Lights
     Light pointLights[4];
     Light spotLights[4];
     ivec4 counts;     // x=numPointLights, y=numSpotLights
+	vec4 ambientIntensity;
 } lights;
+
+layout (std140) uniform Fog
+{
+	vec4 color; // intensity in w
+	int enabled;
+} fog;
+
+float CalcFogFactor(vec3 fragPos)
+{
+	float gradient = fog.color.w * fog.color.w - 50 * fog.color.w + 60;
+	float distance = length(fs_in.viewPos - fragPos);
+	
+	float fog = exp(-pow(distance/gradient, 4));
+	return clamp(fog, 0.0, 1.0);
+}
 
 vec3 CalcLight(Light light, vec3 normal, vec3 fragPos, vec3 viewPos)
 {
@@ -214,14 +230,21 @@ void main()
 	Normal = normalize(fs_in.TBN * Normal); 
     
 	// Calculate lighting
-	vec3 result = material.ambient * texture(material.ambientMap0, fs_in.texCoords).rgb;
+	vec3 result = lights.ambientIntensity.rgb *  material.ambient * texture(material.ambientMap0, fs_in.texCoords).rgb;
     for(int i = 0; i < lights.counts.x; i++) {
         result += CalcLight(lights.pointLights[i], Normal, fs_in.fragPos, fs_in.viewPos);
     }
     for(int i = 0; i < lights.counts.y; i++) {
         result += CalcLight(lights.spotLights[i], Normal, fs_in.fragPos, fs_in.viewPos);
     }
-    
+    result = clamp(result, 0.0, 1.0);
+
+	if (fog.enabled != 0)
+	{
+		float fog_factor = CalcFogFactor(fs_in.fragPos);
+		result = mix(fog.color.rgb, result, fog_factor);
+	}
+
 	FragColor = vec4(result, 1.0);
 }
 )";

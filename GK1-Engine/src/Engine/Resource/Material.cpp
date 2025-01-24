@@ -67,7 +67,23 @@ layout (std140) uniform Lights
     Light pointLights[4];
     Light spotLights[4];
     ivec4 counts;     // x=numPointLights, y=numSpotLights
+	vec4 ambientIntensity;
 } lights;
+
+layout (std140) uniform Fog
+{
+	vec4 color; // intensity in w
+	int enabled;
+} fog;
+
+float CalcFogFactor(vec3 fragPos)
+{
+	float gradient = fog.color.w * fog.color.w - 50 * fog.color.w + 60;
+	float distance = length(viewPos - fragPos);
+	
+	float fog = exp(-pow(distance/gradient, 4));
+	return clamp(fog, 0.0, 1.0);
+}
 
 vec3 CalcLight(Light light, vec3 normal, vec3 fragPos, vec3 viewPos) {
     float intensity = light.color.w;
@@ -106,14 +122,21 @@ void main()
 	Normal = normalize(TBN * Normal); 
     
 	// Calculate lighting
-	vec3 result = material.ambient * texture(material.ambientMap0, TexCoords).rgb;
+	vec3 result = lights.ambientIntensity.rgb * material.ambient * texture(material.ambientMap0, TexCoords).rgb;
     for(int i = 0; i < lights.counts.x; i++) {
         result += CalcLight(lights.pointLights[i], Normal, FragPos, viewPos);
     }
     for(int i = 0; i < lights.counts.y; i++) {
         result += CalcLight(lights.spotLights[i], Normal, FragPos, viewPos);
     }
-    
+	result = clamp(result, 0.0, 1.0);
+
+	if (fog.enabled != 0)
+	{
+		float fog_factor = CalcFogFactor(FragPos);
+		result = mix(fog.color.rgb, result, fog_factor);
+	}
+
 	FragColor = vec4(result, 1.0);
 }
 )";
@@ -135,10 +158,9 @@ Material::~Material()
 
 void Material::SetShader(std::shared_ptr<Shader> shader)
 {
-	unsigned int uniformMatricesBlockIndex = glGetUniformBlockIndex(shader->GetID(), "Matrices");
-	glUniformBlockBinding(shader->GetID(), uniformMatricesBlockIndex, 0);
-	unsigned int uniformLightsBlockIndex = glGetUniformBlockIndex(shader->GetID(), "Lights");
-	glUniformBlockBinding(shader->GetID(), uniformLightsBlockIndex, 1);
+	shader->BindUBO("Matrices", 0);
+	shader->BindUBO("Lights", 1);
+	shader->BindUBO("Fog", 2);
 	m_shader = shader;
 }
 
