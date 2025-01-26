@@ -185,7 +185,7 @@ layout (std140) uniform Fog
 
 float CalcFogFactor(vec3 fragPos)
 {
-	float gradient = fog.color.w * fog.color.w - 50 * fog.color.w + 60;
+	float gradient = fog.color.w * fog.color.w - 150 * fog.color.w + 180;
 	float distance = length(fs_in.viewPos - fragPos);
 	
 	float fog = exp(-pow(distance/gradient, 4));
@@ -254,6 +254,7 @@ Terrain::Terrain(uint32_t gridSize)
 	, m_WorldScale(1.0f)
 	, m_tessLevel(16.0f)
 	, m_heightScale(128.0f)
+	, m_dirty(true)
 {
 	// Create and bind VAO
 	glGenVertexArrays(1, &m_vao);
@@ -274,6 +275,43 @@ Terrain::Terrain(uint32_t gridSize)
 Terrain::~Terrain()
 {
 	Cleanup();
+}
+
+void Terrain::GenerateCollisionMesh(uint32_t gridSize, std::vector<glm::vec3> &vertices, std::vector<uint32_t> &indices)
+{
+	if (!m_heightmap) return;
+
+	float spacing = 1.0f / (gridSize - 1);
+	int width = m_heightmap->GetWidth();
+	int height = m_heightmap->GetHeight();
+
+	vertices.reserve(gridSize * gridSize);
+	indices.reserve((gridSize - 1) * (gridSize - 1) * 4);
+
+	for (uint32_t z = 0; z < gridSize; ++z)
+	{
+		for (uint32_t x = 0; x < gridSize; ++x)
+		{
+			float value = m_heightmap->GetPixel<uint16_t>(x * spacing * (width - 1), (1.0f - z * spacing) * (height - 1)).r * m_heightScale;
+			vertices.push_back(glm::vec3(width * (x * spacing - 0.5f) * m_WorldScale, value, height * (z * spacing - 0.5f) * m_WorldScale));
+		}
+	}
+
+	for (uint32_t z = 0; z < gridSize - 1; ++z)
+	{
+		for (uint32_t x = 0; x < gridSize - 1; ++x)
+		{
+			uint32_t topLeft = z * gridSize + x;
+			uint32_t topRight = topLeft + 1;
+			uint32_t bottomLeft = (z + 1) * gridSize + x;
+			uint32_t bottomRight = bottomLeft + 1;
+
+			indices.push_back(topLeft);
+			indices.push_back(bottomLeft);
+			indices.push_back(topRight);
+			indices.push_back(bottomRight);
+		}
+	}
 }
 
 void Terrain::SetupGeometry()

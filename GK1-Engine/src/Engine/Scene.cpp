@@ -1,7 +1,9 @@
 #include "Engine/Scene.h"
-#include "Engine/Objects/Light/LightManager.h"
 
-Scene::Scene() : m_root(std::make_shared<SceneNode>()) {}
+Scene::Scene()
+	: m_root(std::make_shared<SceneNode>())
+	, m_lightManager(std::make_unique<LightManager>())
+{}
 
 void Scene::SetCamera(std::shared_ptr<Camera> camera) {
 	m_camera = camera;
@@ -30,7 +32,7 @@ void Scene::Draw(Renderer *renderer) {
 
 	// Update states
 	UpdateMatricesUBO(renderer);
-	m_lightManager.UpdateLights();
+	m_lightManager->UpdateLights();
 	UpdateFogUBO(renderer);
 
 	// Draw scene
@@ -84,13 +86,13 @@ std::shared_ptr<SceneNode> Scene::AddObject(std::shared_ptr<GraphicsObject> obj,
 
 void Scene::AddLight(std::shared_ptr<Light> light, SceneNode *parent)
 {
-	m_lightManager.AddLight(light);
+	m_lightManager->AddLight(light);
 	AddObject(light, parent);
 }
 
 void Scene::RemoveLight(std::shared_ptr<Light> light)
 {
-	m_lightManager.RemoveLight(light);
+	m_lightManager->RemoveLight(light);
 	// TODO: Remove light from scene graph
 	// m_root->RemoveChild(light);
 }
@@ -116,7 +118,7 @@ bool Scene::IsFogEnabled() const
 	return m_fog.enabled;
 }
 
-LightManager &Scene::GetLightManager()
+LightManager *Scene::GetLightManager()
 {
-	return m_lightManager;
+	return m_lightManager.get();
 }

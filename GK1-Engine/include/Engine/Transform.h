@@ -8,6 +8,8 @@ public:
 	Transform();
 	virtual ~Transform();
 
+	void ApplyTransformations(const glm::mat4 &transforms);
+
 	glm::vec3 GetWorldPosition() const;
 	glm::vec3 GetWorldRotation() const;
 	glm::vec3 GetWorldScale() const;
@@ -26,8 +28,10 @@ public:
 	glm::vec3 GetScale() const;
 
 	glm::mat4 GetModelMatrix() const;
+	void SetModelMatrix(const glm::mat4 &matrix);
 	glm::mat4 GetWorldMatrix() const;
 
+	static glm::vec3 GetRotation(glm::mat3 rotationMatrix);
 	glm::vec3 GetForward() const;
 	glm::vec3 GetRight() const;
 	glm::vec3 GetUp() const;
@@ -36,7 +40,6 @@ public:
 
 protected:
 	virtual void UpdateState();
-	glm::vec3 GetRotation(glm::mat3 rotationMatrix) const;
 	void SetWorldMatrix(const glm::mat4 &matrix);
 
 	glm::vec3 m_position;

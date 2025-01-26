@@ -9,13 +9,7 @@ public:
 	struct Settings {
 		float moveSpeed{ 5.0f };
 		float mouseSensitivity{ 0.1f };
-		float orbitSpeed{ 1.0f };
-		float zoomSpeed{ 1.0f };
-		float minZoom{ 1.0f };
-		float maxZoom{ 100.0f };
-		float smoothness{ 0.3f };
 		bool invertY{ false };
-		bool smoothZoom{ true };
 	};
 
 	BaseCameraController(std::shared_ptr<Camera> camera)

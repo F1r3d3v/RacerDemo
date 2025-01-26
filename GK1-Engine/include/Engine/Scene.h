@@ -25,7 +25,7 @@ public:
 	void GetFog(glm::vec3 &color, float &density) const;
 	void EnableFog(bool enable);
 	bool IsFogEnabled() const;
-	LightManager &GetLightManager();
+	LightManager *GetLightManager();
 
 	void Draw(Renderer *renderer);
 
@@ -33,10 +33,10 @@ private:
 	void UpdateMatricesUBO(Renderer *renderer) const;
 	void UpdateFogUBO(Renderer *renderer) const;
 
-	LightManager m_lightManager;
+	std::unique_ptr<LightManager> m_lightManager;
 
 	struct Fog {
-		glm::vec4 color{0.5f, 0.5f, 0.5f, 0.01f}; // density in w
+		glm::vec4 color{0.6f, 0.6f, 0.6f, 0.0f}; // density in w
 		int enabled{false};
 	} m_fog{};
 

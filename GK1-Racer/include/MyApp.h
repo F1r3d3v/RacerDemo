@@ -1,5 +1,6 @@
 #pragma once
 #include "Engine/App.h"
+#include "Physics/PhysicsManager.h"
 
 #include <imgui.h>
 
@@ -18,5 +19,8 @@ public:
 private:
 	bool m_EnterGame = false;
 	int m_SelectedCamera = 0;
+	bool m_controlPanel = true;
+
+	std::unique_ptr<PhysicsManager> m_physicsManager;
 };
 

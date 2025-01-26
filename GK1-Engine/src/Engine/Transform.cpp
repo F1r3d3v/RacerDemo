@@ -25,6 +25,11 @@ Transform::~Transform()
 {
 }
 
+void Transform::ApplyTransformations(const glm::mat4 &transforms)
+{
+	SetWorldMatrix(transforms * m_modelMatrix);
+}
+
 glm::vec3 Transform::GetWorldPosition() const
 {
 	return m_worldPosition;
@@ -124,7 +129,7 @@ void Transform::UpdateState()
 	m_up = glm::vec3(rotationMatrix[1]);
 }
 
-glm::vec3 Transform::GetRotation(glm::mat3 rotationMatrix) const
+glm::vec3 Transform::GetRotation(glm::mat3 rotationMatrix)
 {
 	glm::vec3 rotation;
 
@@ -150,6 +155,18 @@ glm::mat4 Transform::GetModelMatrix() const
 		m_transformChanged = false;
 	}
 	return m_modelMatrix;
+}
+
+void Transform::SetModelMatrix(const glm::mat4 &matrix)
+{
+	if (m_modelMatrix == matrix) return;
+	m_modelMatrix = matrix;
+	glm::vec3 skew;
+	glm::vec4 perspective;
+	glm::quat rotation;
+	glm::decompose(matrix, m_scale, rotation, m_position, skew, perspective);
+	m_rotation = glm::degrees(glm::eulerAngles(rotation));
+	m_transformChanged = true;
 }
 
 glm::mat4 Transform::GetWorldMatrix() const

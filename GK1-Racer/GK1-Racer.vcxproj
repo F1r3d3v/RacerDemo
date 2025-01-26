@@ -20,11 +20,19 @@
     <ClInclude Include="include\CameraController\BaseCameraController.h" />
     <ClInclude Include="include\Config.h" />
     <ClInclude Include="include\MyApp.h" />
+    <ClInclude Include="include\Objects\Vehicle.h" />
+    <ClInclude Include="include\Physics\BulletDebugDrawer.h" />
+    <ClInclude Include="include\Physics\PhysicsManager.h" />
+    <ClInclude Include="include\Physics\VehicleController.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="include\CameraController\RacingCameraController.cpp" />
+    <ClCompile Include="include\CameraController\RacingCameraController.h" />
+    <ClCompile Include="src\Objects\Vehicle.cpp" />
+    <ClCompile Include="src\Physics\VehicleController.cpp" />
+    <ClCompile Include="src\Physics\PhysicsManager.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\MyApp.cpp" />
+    <ClCompile Include="src\CameraController\RacingCameraController.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\GK1-Engine\GK1-Engine.vcxproj">
@@ -73,13 +81,13 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;WIN64;_CRT_SECURE_NO_WARNINGS;NOMINMAX;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)include;$(SolutionDir)GK1-Engine\include;$(SolutionDir)GK1-Engine\lib\GLAD\include;$(SolutionDir)GK1-Engine\lib\glfw\include;$(SolutionDir)GK1-Engine\lib\stb;$(SolutionDir)GK1-Engine\lib\glm\include;$(SolutionDir)GK1-Engine\lib\ImGUI;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)include;$(SolutionDir)GK1-Engine\include;$(SolutionDir)GK1-Engine\lib\GLAD\include;$(SolutionDir)GK1-Engine\lib\glfw\include;$(SolutionDir)GK1-Engine\lib\stb;$(SolutionDir)GK1-Engine\lib\glm\include;$(SolutionDir)GK1-Engine\lib\ImGUI;$(ProjectDir)lib\bullet3d\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
-      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;glfw3.lib;glfw3dll.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(SolutionDir)GK1-Engine\lib\glfw\lib-vc2022;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;glfw3.lib;glfw3dll.lib;opengl32.lib;BulletCollision_Debug.lib;BulletDynamics_Debug.lib;LinearMath_Debug.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)GK1-Engine\lib\glfw\lib-vc2022;$(ProjectDir)lib\bullet3d\lib\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -90,15 +98,15 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;WIN64;_CRT_SECURE_NO_WARNINGS;NOMINMAX;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)include;$(SolutionDir)GK1-Engine\include;$(SolutionDir)GK1-Engine\lib\GLAD\include;$(SolutionDir)GK1-Engine\lib\glfw\include;$(SolutionDir)GK1-Engine\lib\stb;$(SolutionDir)GK1-Engine\lib\glm\include;$(SolutionDir)GK1-Engine\lib\ImGUI;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)include;$(SolutionDir)GK1-Engine\include;$(SolutionDir)GK1-Engine\lib\GLAD\include;$(SolutionDir)GK1-Engine\lib\glfw\include;$(SolutionDir)GK1-Engine\lib\stb;$(SolutionDir)GK1-Engine\lib\glm\include;$(SolutionDir)GK1-Engine\lib\ImGUI;$(ProjectDir)lib\bullet3d\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <SubSystem>Windows</SubSystem>
-      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;glfw3.lib;glfw3dll.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(SolutionDir)GK1-Engine\lib\glfw\lib-vc2022;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;glfw3.lib;glfw3dll.lib;opengl32.lib;BulletCollision.lib;BulletDynamics.lib;LinearMath.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)GK1-Engine\lib\glfw\lib-vc2022;$(ProjectDir)lib\bullet3d\lib\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -10,6 +10,8 @@
 #include <Engine/Renderer.h>
 #include <Engine/Input.h>
 #include <Engine/Scene.h>
+#include <Objects/Vehicle.h>
+#include <Physics/BulletDebugDrawer.h>
 #include <format>
 
 #include "Config.h"
@@ -19,12 +21,15 @@ static std::shared_ptr<Camera> cameras[3];
 static std::shared_ptr<PointLight> light2;
 static std::shared_ptr<Model> model1;
 static std::shared_ptr<Model> model2;
+static std::shared_ptr<Vehicle> vehicle;
+static BulletDebugDrawer *debugDrawer = nullptr;
 
 static glm::vec3 cubeRot = glm::vec3(0.0f);
 static glm::vec3 cubePos = glm::vec3(0.0f);
 
 MyApp::MyApp(std::string title, int width, int height)
 	: App(title, width, height)
+	, m_physicsManager(std::make_unique<PhysicsManager>())
 {
 	SetVSync(false);
 }
@@ -84,11 +89,52 @@ void MyApp::OnStart()
 	auto mat = ResourceManager::Get().Load<Material>("TerrainMaterial");
 	mat->SetShader(shader);
 	terrain->SetMaterial(mat);
-	terrain->SetHeightScale(128.0);
-	terrain->SetWorldScale(0.5);
+	terrain->SetHeightScale(256.0);
+	//terrain->SetWorldScale(0.5);
 	terrain->SetPosition({ 0.0f, -15, 0.0f });
-
 	scene->AddObject(terrain);
+
+	// Generate collision mesh for terrain
+	std::vector<glm::vec3> vertices;
+	std::vector<uint32_t> indices;
+	terrain->GenerateCollisionMesh(128, vertices, indices);
+	btTriangleMesh *bulletMesh = new btTriangleMesh();
+	for (size_t i = 0; i < indices.size(); i += 4)
+	{
+		glm::vec3 v0 = vertices[indices[i]]; // topLeft
+		glm::vec3 v1 = vertices[indices[i + 1]]; //bottomLeft
+		glm::vec3 v2 = vertices[indices[i + 2]]; //topRight
+		glm::vec3 v3 = vertices[indices[i + 3]]; //bottomRight
+
+		bulletMesh->addTriangle(
+			btVector3(v0.x, v0.y, v0.z),
+			btVector3(v1.x, v1.y, v1.z),
+			btVector3(v2.x, v2.y, v2.z)
+		);
+
+		bulletMesh->addTriangle(
+			btVector3(v2.x, v2.y, v2.z),
+			btVector3(v1.x, v1.y, v1.z),
+			btVector3(v3.x, v3.y, v3.z)
+		);
+	}
+	btBvhTriangleMeshShape *terrainShape = new btBvhTriangleMeshShape(bulletMesh, true);
+	btDefaultMotionState *motionState = new btDefaultMotionState(btTransform(btQuaternion(0, 0, 0, 1), btVector3(0, -15.0, 0)));
+	btRigidBody::btRigidBodyConstructionInfo rigidBodyCI(0, motionState, terrainShape, btVector3(0, 0, 0));
+	btRigidBody *terrainBody = new btRigidBody(rigidBodyCI);
+	m_physicsManager->AddRigidBody(terrainBody);
+	
+	//auto vehicleModel = Model::LoadFromFile("assets/models/pickup_car/Hilux.obj");
+	auto cube = Model::LoadFromFile("assets/models/cube/cube.obj");
+	vehicle = std::make_shared<Vehicle>(
+		m_physicsManager->GetDynamicsWorld(),
+		cube,
+		glm::vec3(0, 50, 10)
+	);
+	scene->AddObject(vehicle);
+
+	debugDrawer = new BulletDebugDrawer();	
+	m_physicsManager->GetDynamicsWorld()->setDebugDrawer(debugDrawer);
 }
 
 void MyApp::OnLoad(ResourceManager *rm)
@@ -128,6 +174,9 @@ void MyApp::OnUpdate(float deltaTime)
 {
 	if (Input::IsKeyPressed(GLFW_KEY_ESCAPE))
 		Close();
+
+	if (Input::IsKeyPressed(GLFW_KEY_F2))
+		m_controlPanel = !m_controlPanel;
 
 	if (Input::IsKeyPressed(GLFW_KEY_F1))
 		SetWireframe(!GetWireframe());
@@ -182,6 +231,30 @@ void MyApp::OnUpdate(float deltaTime)
 
 		camera->Rotate(glm::vec3(-mouseDelta.y, mouseDelta.x, 0.0f));
 	}
+
+	// Update physics
+	auto controller = vehicle->GetController();
+	// Basic vehicle controls
+	controller->ApplyEngineForce(0.0f);
+	controller->Steer(0.0f);
+	controller->Brake(0.0f);
+	if (Input::IsKeyDown(GLFW_KEY_UP))
+		controller->ApplyEngineForce(1000.0f);
+	if (Input::IsKeyDown(GLFW_KEY_DOWN))
+		controller->ApplyEngineForce(-1000.0f);
+	if (Input::IsKeyDown(GLFW_KEY_LEFT))
+		controller->Steer(0.5f);
+	if (Input::IsKeyDown(GLFW_KEY_RIGHT))
+		controller->Steer(-0.5f);
+	if (Input::IsKeyDown(GLFW_KEY_SPACE))
+		controller->Brake(65.0f);
+	controller->GetChassisBody()->activate(true);
+
+	if (Input::IsKeyPressed(GLFW_KEY_R))
+		controller->Flip();
+
+	vehicle->Update(deltaTime);
+	m_physicsManager->Update(deltaTime);
 }
 
 void MyApp::OnRender(Renderer *renderer)
@@ -192,114 +265,123 @@ void MyApp::OnRender(Renderer *renderer)
 	model2->SetRotation(glm::cross(glm::vec3(2.0f), cubeRot));
 
 	scene->Draw(renderer);
+	static bool first = true;
+	if (first)
+	{
+		first = false;
+	}
+		m_physicsManager->GetDynamicsWorld()->debugDrawWorld();
+	debugDrawer->Draw();
 }
 
 void MyApp::OnImGuiRender()
 {
 	ImGuiIO &io = ImGui::GetIO(); (void)io;
 
-	ImGui::SetNextWindowSize(ImVec2(448.0, 0.0), ImGuiCond_Once);
-	ImGui::SetNextWindowCollapsed(false, ImGuiCond_Once);
-	ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x, 0), ImGuiCond_Always, ImVec2(1.0f, 0.0f));
-	ImGui::Begin("Control Panel", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize);
-
-	// Set Camera index via combo
-	ImGui::Text("Camera");
-	if (ImGui::Combo("##Camera", &m_SelectedCamera, "Camera 1\0Camera 2\0Camera 3\0"))
-		scene->SetCamera(cameras[m_SelectedCamera]);
-
-	// Write as text Camera position, rotation and FOV
-	auto camera = scene->GetCamera();
-	auto pos = camera->GetPosition();
-	auto rot = camera->GetRotation();
-	auto fov = camera->GetFov();
-	ImGui::Text("Position: %.2f %.2f %.2f", pos.x, pos.y, pos.z);
-	ImGui::Text("Rotation: %.2f %.2f %.2f", rot.x, rot.y, rot.z);
-	ImGui::Text("FOV: %.2f", fov);
-
-	// Write as text Model position and rotation
-	auto modelPos = model2->GetWorldPosition();
-	auto modelRot = model2->GetRotation();
-	ImGui::Text("Model Position: %.2f %.2f %.2f", modelPos.x, modelPos.y, modelPos.z);
-	ImGui::Text("Model Rotation: %.2f %.2f %.2f", modelRot.x, modelRot.y, modelRot.z);
-
-	// Change camera perspective
-	if (ImGui::CollapsingHeader("Camera Settings"))
+	if (m_controlPanel)
 	{
-		bool perspective = camera->GetProjectionType() == Camera::ProjectionType::Perspective;
-		float orthographicSize = camera->GetOrthographicSize();
-		float nearPlane = camera->GetNearPlane();
-		float farPlane = camera->GetFarPlane();
+		ImGui::SetNextWindowSize(ImVec2(448.0, 0.0), ImGuiCond_Once);
+		ImGui::SetNextWindowCollapsed(false, ImGuiCond_Once);
+		ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x, 0), ImGuiCond_Always, ImVec2(1.0f, 0.0f));
+		ImGui::Begin("Control Panel", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
 
-		if (!perspective)
+		// Set Camera index via combo
+		ImGui::Text("Camera");
+		if (ImGui::Combo("##Camera", &m_SelectedCamera, "Camera 1\0Camera 2\0Camera 3\0"))
+			scene->SetCamera(cameras[m_SelectedCamera]);
+
+		// Write as text Camera position, rotation and FOV
+		auto camera = scene->GetCamera();
+		auto pos = camera->GetPosition();
+		auto rot = camera->GetRotation();
+		auto fov = camera->GetFov();
+		ImGui::Text("Position: %.2f %.2f %.2f", pos.x, pos.y, pos.z);
+		ImGui::Text("Rotation: %.2f %.2f %.2f", rot.x, rot.y, rot.z);
+		ImGui::Text("FOV: %.2f", fov);
+
+		// Write as text Model position and rotation
+		auto vehiclePos = vehicle->GetController()->GetPosition();
+		auto vehicleRot = vehicle->GetController()->GetRotation();
+		ImGui::Text("Vehicle Position: %.2f %.2f %.2f", vehiclePos.x, vehiclePos.y, vehiclePos.z);
+		ImGui::Text("Vehicle Rotation: %.2f %.2f %.2f", vehicleRot.x, vehicleRot.y, vehicleRot.z);
+		auto velocity = vehicle->GetController()->GetVehicleVelocity();
+		ImGui::Text("Vehicle Velocity: %.2f %.2f %.2f", velocity.x, velocity.y, velocity.z);
+
+		// Change camera perspective
+		if (ImGui::CollapsingHeader("Camera Settings"))
 		{
-			if (ImGui::SliderFloat("Orthographic Size", &orthographicSize, 1.0f, 200.0f))
-				camera->SetOrthographic(orthographicSize, camera->GetNearPlane(), camera->GetFarPlane());
-			if (ImGui::SliderFloat("Near Plane", &nearPlane, -2000.0f, 1.0f))
-				camera->SetOrthographic(camera->GetOrthographicSize(), nearPlane, camera->GetFarPlane());
-			if (ImGui::SliderFloat("Far Plane", &farPlane, 1.0f, 2000.0f))
-				camera->SetOrthographic(camera->GetOrthographicSize(), camera->GetNearPlane(), farPlane);
-		}
-		else
-		{
-			if (ImGui::SliderFloat("FOV", &fov, 30.0f, 120.0f))
-				camera->SetFov(fov);
-			if (ImGui::SliderFloat("Near Plane", &nearPlane, 0.1f, 100.0f))
-				camera->SetPerspective(camera->GetFov(), camera->GetAspectRatio(), nearPlane, camera->GetFarPlane());
-			if (ImGui::SliderFloat("Far Plane", &farPlane, 1.0f, 2000.0f))
-				camera->SetPerspective(camera->GetFov(), camera->GetAspectRatio(), camera->GetNearPlane(), farPlane);
-		}
+			bool perspective = camera->GetProjectionType() == Camera::ProjectionType::Perspective;
+			float orthographicSize = camera->GetOrthographicSize();
+			float nearPlane = camera->GetNearPlane();
+			float farPlane = camera->GetFarPlane();
 
-
-		// Toggle wireframe
-		bool wireframe = GetWireframe();
-		if (ImGui::Checkbox("Wireframe", &wireframe))
-			SetWireframe(wireframe);
-
-		ImGui::SameLine();
-
-		// Toggle perspective
-		if (ImGui::Checkbox("Perspective", &perspective))
-		{
-			if (perspective)
-				camera->SetPerspective(fov, camera->GetAspectRatio(), camera->GetNearPlane(), camera->GetFarPlane());
+			if (!perspective)
+			{
+				if (ImGui::SliderFloat("Orthographic Size", &orthographicSize, 1.0f, 300.0f))
+					camera->SetOrthographic(orthographicSize, camera->GetNearPlane(), camera->GetFarPlane());
+				if (ImGui::SliderFloat("Near Plane", &nearPlane, -2000.0f, 1.0f))
+					camera->SetOrthographic(camera->GetOrthographicSize(), nearPlane, camera->GetFarPlane());
+				if (ImGui::SliderFloat("Far Plane", &farPlane, 1.0f, 2000.0f))
+					camera->SetOrthographic(camera->GetOrthographicSize(), camera->GetNearPlane(), farPlane);
+			}
 			else
-				camera->SetOrthographic(camera->GetOrthographicSize(), camera->GetNearPlane(), camera->GetFarPlane());
+			{
+				if (ImGui::SliderFloat("FOV", &fov, 30.0f, 120.0f))
+					camera->SetFov(fov);
+				if (ImGui::SliderFloat("Near Plane", &nearPlane, 0.1f, 100.0f))
+					camera->SetPerspective(camera->GetFov(), camera->GetAspectRatio(), nearPlane, camera->GetFarPlane());
+				if (ImGui::SliderFloat("Far Plane", &farPlane, 1.0f, 2000.0f))
+					camera->SetPerspective(camera->GetFov(), camera->GetAspectRatio(), camera->GetNearPlane(), farPlane);
+			}
+
+
+			// Toggle wireframe
+			bool wireframe = GetWireframe();
+			if (ImGui::Checkbox("Wireframe", &wireframe))
+				SetWireframe(wireframe);
+
+			ImGui::SameLine();
+
+			// Toggle perspective
+			if (ImGui::Checkbox("Perspective", &perspective))
+			{
+				if (perspective)
+					camera->SetPerspective(fov, camera->GetAspectRatio(), camera->GetNearPlane(), camera->GetFarPlane());
+				else
+					camera->SetOrthographic(camera->GetOrthographicSize(), camera->GetNearPlane(), camera->GetFarPlane());
+			}
 		}
-	}
 
-	if (ImGui::CollapsingHeader("Scene"))
-	{
-		ImGui::SeparatorText("Skybox");
-
-		float blendFactor = scene->GetSkybox()->GetBlendFactor();
-		if (ImGui::SliderFloat("Day Time", &blendFactor, 0.0f, 1.0f))
+		if (ImGui::CollapsingHeader("Scene"))
 		{
-			scene->GetSkybox()->SetBlendFactor(blendFactor);
-			scene->GetLightManager().SetAmbientIntensity(glm::vec3(blendFactor));
+			glm::vec3 fogColor;
+			float fogDensity;
+			scene->GetFog(fogColor, fogDensity);
+			float blendFactor = scene->GetSkybox()->GetBlendFactor();
+
+			ImGui::SeparatorText("Skybox");
+			if (ImGui::SliderFloat("Day Time", &blendFactor, 0.0f, 1.0f))
+			{
+				scene->GetSkybox()->SetBlendFactor(blendFactor);
+				scene->GetLightManager()->SetAmbientIntensity(glm::vec3(blendFactor));
+				scene->SetFog(glm::mix(glm::vec3(0.15f), glm::vec3(0.6f), blendFactor), fogDensity);
+			}
+
+			ImGui::SeparatorText("Fog");
+			if (ImGui::ColorEdit3("Fog Color", &fogColor.x))
+				scene->SetFog(fogColor, fogDensity);
+
+			if (ImGui::SliderFloat("Fog Density", &fogDensity, 0.0f, 1.0f))
+				scene->SetFog(fogColor, fogDensity);
+
+			bool fogEnabled = scene->IsFogEnabled();
+			if (ImGui::Checkbox("Enable Fog", &fogEnabled))
+				scene->EnableFog(fogEnabled);
 		}
 
-		ImGui::SeparatorText("Fog");
-
-		// Fog
-		glm::vec3 fogColor;
-		float fogDensity;
-		scene->GetFog(fogColor, fogDensity);
-
-		if (ImGui::ColorEdit3("Fog Color", &fogColor.x))
-			scene->SetFog(fogColor, fogDensity);
-
-		if (ImGui::SliderFloat("Fog Density", &fogDensity, 0.0f, 1.0f))
-			scene->SetFog(fogColor, fogDensity);
-
-		bool fogEnabled = scene->IsFogEnabled();
-		if (ImGui::Checkbox("Enable Fog", &fogEnabled))
-			scene->EnableFog(fogEnabled);
+		ImGui::SetWindowSize(ImVec2(ImGui::GetWindowWidth(), 0.0));
+		ImGui::End();
 	}
-
-
-	ImGui::SetWindowSize(ImVec2(ImGui::GetWindowWidth(), 0.0));
-	ImGui::End();
 }
 
 void MyApp::OnResize(int width, int height)

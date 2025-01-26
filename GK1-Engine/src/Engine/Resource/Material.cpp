@@ -78,7 +78,7 @@ layout (std140) uniform Fog
 
 float CalcFogFactor(vec3 fragPos)
 {
-	float gradient = fog.color.w * fog.color.w - 50 * fog.color.w + 60;
+	float gradient = fog.color.w * fog.color.w - 150 * fog.color.w + 180;
 	float distance = length(viewPos - fragPos);
 	
 	float fog = exp(-pow(distance/gradient, 4));
@@ -235,7 +235,13 @@ void Material::Bind() const
 	// Set default textures if none are set
 	if (textureCount[Texture::TextureType::Ambient] == 0)
 	{
-		auto texture = Texture::GetDefaultTexture();
+		std::shared_ptr<Texture> texture;
+
+		if (textureCount[Texture::TextureType::Diffuse] > 0)
+			texture = m_textures.at(Texture::TextureType::Diffuse)[0];
+		else
+			texture = Texture::GetDefaultTexture();
+
 		texture->Bind(textureSlot);
 		m_shader->SetInt("material.ambientMap0", textureSlot);
 		textureSlot++;

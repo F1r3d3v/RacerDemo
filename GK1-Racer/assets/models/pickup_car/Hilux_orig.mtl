@@ -1,0 +1,92 @@
+# Blender 3.3.1 MTL File: 'Hilux.blend'
+# www.blender.org
+
+newmtl Body
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd Car_Body_Diffuse.png
+map_Ns Car_Body_Rough.png
+
+newmtl Body.Bed
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd Car_Body_Diffuse.png
+map_Ns Car_Body_Rough.png
+
+newmtl Glass
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+illum 9
+map_Kd Car_Glass_Diffuse.png
+map_Ns Car_Glass_Rough.png
+map_d Car_Glass_Diffuse.png
+
+newmtl InteriorAll
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+illum 2
+map_Kd Interior_Diff_4K.png
+map_Ns Interior_Rough_4K.png
+map_d Interior_Diff_4K.png
+
+newmtl Pipes
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 3
+map_Kd Car_Shaft_Diffuse.png
+map_Ns Car_shaft_Roughness.png
+
+newmtl Rims
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd Car_Rims_Diffuse.png
+map_Ns Car_Rims_Roughness.png
+
+newmtl Springs
+Ns 722.500000
+Ka 1.000000 1.000000 1.000000
+Kd 0.002569 0.002569 0.002569
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+
+newmtl Tires
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd TiresDif.png
+map_Ns TiresRough.png
+
+newmtl Trims
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd Car_Trims_Diffuse.png
+map_Ns Car_Trims_Roughness.png

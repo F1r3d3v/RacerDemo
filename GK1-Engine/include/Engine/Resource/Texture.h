@@ -4,6 +4,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <glm/glm.hpp>
 
 class Texture : public Resource {
 public:
@@ -32,6 +33,34 @@ public:
 	{
 		return m_data;
 	}
+
+    template <typename T>
+    requires (std::is_unsigned<T>::value && std::is_integral<T>::value && sizeof(T) < 8)
+    glm::vec4 GetPixel(int x, int y) const
+    {
+        size_t max_value = (1 << 8 * sizeof(T)) - 1;
+        if (m_channels == 1)
+        {
+			double value = static_cast<double>(reinterpret_cast<T *>(m_data)[y * m_width + x]);
+            return glm::vec4((float)(value / max_value));
+        }
+        else if (m_channels == 3)
+        {
+			double r = static_cast<double>(reinterpret_cast<T *>(m_data)[(y * m_width + x) * 3]);
+			double g = static_cast<double>(reinterpret_cast<T *>(m_data)[(y * m_width + x) * 3 + 1]);
+			double b = static_cast<double>(reinterpret_cast<T *>(m_data)[(y * m_width + x) * 3 + 2]);
+            return glm::vec4((float)(r / max_value), (float)(g / max_value), b / (float)(max_value), 1.0f);
+        }
+        else if (m_channels == 4)
+        {
+			double r = static_cast<double>(reinterpret_cast<T *>(m_data)[(y * m_width + x) * 4]);
+			double g = static_cast<double>(reinterpret_cast<T *>(m_data)[(y * m_width + x) * 4 + 1]);
+			double b = static_cast<double>(reinterpret_cast<T *>(m_data)[(y * m_width + x) * 4 + 2]);
+			double a = static_cast<double>(reinterpret_cast<T *>(m_data)[(y * m_width + x) * 4 + 3]);
+            return glm::vec4((float)(r / max_value), (float)(g / max_value), (float)(b / max_value), (float)(a / max_value));
+        }
+        return glm::vec4(0.0f);
+    }
 
 	GLuint GetID() const
 	{

@@ -20,6 +20,8 @@ public:
 	void SetMaterial(std::shared_ptr<Material> material) { m_material = material; }
 	std::shared_ptr<Material> GetMaterial() const { return m_material; }
 
+	void GenerateCollisionMesh(uint32_t gridSize, std::vector<glm::vec3> &vertices, std::vector<uint32_t> &indices);
+
 private:
 	void SetupGeometry();
 	void Cleanup();
