@@ -9,14 +9,14 @@ public:
 		: PointLight(props, attn), m_focusExponent(focus)
 	{}
 
-	void SetFocus(float exponent) { m_focusExponent = std::min(exponent, 1.0f); }
+	void SetFocus(float exponent) { m_focusExponent = std::max(exponent, 1.0f); }
 	float GetFocus() const { return m_focusExponent; }
 
 protected:
 	void FillLightData(LightData &data) const override
 	{
 		PointLight::FillLightData(data);
-		data.direction = glm::vec4(GetForward(), m_focusExponent);
+		data.direction = glm::vec4(GetWorldForward(), m_focusExponent);
 	}
 	float m_focusExponent;
 };

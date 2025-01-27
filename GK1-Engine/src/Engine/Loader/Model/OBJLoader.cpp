@@ -149,84 +149,70 @@ OBJLoader::MeshData OBJLoader::ProcessMeshData(
 	MeshData meshData;
 	meshData.name = name;
 
-	// Map to store unique vertices
-	std::unordered_map<std::string, uint32_t> uniqueVertices;
+	std::vector<glm::vec3> accumulatedNormals(positions.size(), glm::vec3(0.0f));
+	std::vector<uint32_t> normalCounts(positions.size(), 0);
 
-	std::unordered_map<uint32_t, uint32_t> vertexCount;
+	// Accumulate face normals
+	for (size_t i = 0; i < tempMesh.vertexIndices.size(); i += 3) {
+		uint32_t posIndices[3];
 
-	// Process all face vertices and build indices
-	for (size_t i = 0; i < tempMesh.vertexIndices.size(); i += 3)
-	{
-		uint32_t indices[3];
-
-		// Process each vertex in the triangle
-		for (int j = 0; j < 3; ++j)
-		{
-			Geometry::Vertex vertex;
-
-			// Get the indices
-			uint32_t posIndex = tempMesh.vertexIndices[i + j];
-			uint32_t uvIndex = tempMesh.uvIndices[i + j];
-
-			// Get the position and texCoords
-			vertex.position = positions[posIndex];
-			vertex.texCoords = (uvIndex < uvs.size()) ? uvs[uvIndex] : glm::vec2(0.0f);
-			vertex.normal = glm::vec3(0.0f);
-
-			// Create a unique key for the vertex
-			std::string key = std::to_string(posIndex);
-
-			// Check if the vertex already exists
-			if (uniqueVertices.count(key) == 0)
-			{
-				uniqueVertices[key] = static_cast<uint32_t>(meshData.vertices.size());
-				meshData.vertices.push_back(vertex);
-			}
-
-			indices[j] = uniqueVertices[key];
-			meshData.indices.push_back(indices[j]);
+		for (int j = 0; j < 3; ++j) {
+			posIndices[j] = tempMesh.vertexIndices[i + j];
 		}
+
+		glm::vec3 v0 = positions[posIndices[0]];
+		glm::vec3 v1 = positions[posIndices[1]];
+		glm::vec3 v2 = positions[posIndices[2]];
+		glm::vec3 faceNormal;
 
 		if (tempMesh.normalIndices.empty())
 		{
-			// Calculate the face normal
-			Geometry::Vertex &v0 = meshData.vertices[indices[0]];
-			Geometry::Vertex &v1 = meshData.vertices[indices[1]];
-			Geometry::Vertex &v2 = meshData.vertices[indices[2]];
-			glm::vec3 delta1 = v1.position - v0.position;
-			glm::vec3 delta2 = v2.position - v0.position;
-			glm::vec3 faceNormal = glm::normalize(glm::cross(delta1, delta2));
-
-			// Accumulate normals for each vertex
-			v0.normal += faceNormal;
-			vertexCount[indices[0]]++;
-			v1.normal += faceNormal;
-			vertexCount[indices[1]]++;
-			v2.normal += faceNormal;
-			vertexCount[indices[2]]++;
+			glm::vec3 edge1 = v1 - v0;
+			glm::vec3 edge2 = v2 - v0;
+			faceNormal = glm::normalize(glm::cross(edge1, edge2));
 		}
 		else
 		{
-			// Get the normal indices
-			uint32_t normalIndex = tempMesh.normalIndices[i];
-			Geometry::Vertex &v0 = meshData.vertices[indices[0]];
-			Geometry::Vertex &v1 = meshData.vertices[indices[1]];
-			Geometry::Vertex &v2 = meshData.vertices[indices[2]];
+			faceNormal = normals[tempMesh.normalIndices[i]];
+		}
 
-			// Accumulate normals for each vertex
-			v0.normal += normals[normalIndex];
-			vertexCount[indices[0]]++;
-			v1.normal += normals[normalIndex];
-			vertexCount[indices[1]]++;
-			v2.normal += normals[normalIndex];
-			vertexCount[indices[2]]++;
+		for (int j = 0; j < 3; ++j) {
+			accumulatedNormals[posIndices[j]] += faceNormal;
+			normalCounts[posIndices[j]]++;
 		}
 	}
 
-	// Normalize the accumulated normals
-	for (int i = 0; i < meshData.vertices.size(); ++i)
-	{
-		meshData.vertices[i].normal = glm::normalize(meshData.vertices[i].normal / static_cast<float>(vertexCount[i]));
+	for (size_t i = 0; i < positions.size(); ++i) {
+		if (normalCounts[i] > 0) {
+			accumulatedNormals[i] = glm::normalize(accumulatedNormals[i] / static_cast<float>(normalCounts[i]));
+		}
+	}
+
+	// Map to store unique vertices
+	std::unordered_map<std::string, uint32_t> uniqueVertices;
+
+	for (size_t i = 0; i < tempMesh.vertexIndices.size(); ++i) {
+		Geometry::Vertex vertex;
+
+		uint32_t posIndex = tempMesh.vertexIndices[i];
+		uint32_t uvIndex = i < tempMesh.uvIndices.size() ? tempMesh.uvIndices[i] : 0;
+
+		vertex.position = positions[posIndex];
+		vertex.texCoords = (uvIndex < uvs.size()) ? uvs[uvIndex] : glm::vec2(0.0f);
+		vertex.normal = accumulatedNormals[posIndex];
+
+		// Create a unique key for the vertex
+		std::stringstream ss;
+		ss << posIndex << '_' << uvIndex;
+		std::string key = ss.str();
+
+		// Check if the vertex already exists
+		if (uniqueVertices.count(key) == 0) {
+			uniqueVertices[key] = static_cast<uint32_t>(meshData.vertices.size());
+			meshData.vertices.push_back(vertex);
+		}
+
+		meshData.indices.push_back(uniqueVertices[key]);
 	}
 
 	// Calculate tangents and bitangents

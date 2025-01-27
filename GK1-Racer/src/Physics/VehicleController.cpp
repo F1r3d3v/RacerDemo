@@ -4,26 +4,38 @@
 VehicleController::VehicleController(btDynamicsWorld *world, const glm::vec3 &startPosition, const VehicleParameters &params)
 	: m_params(params) {
 	// Chassis shape
-	btCollisionShape *chassisShape = new btBoxShape(btVector3(1.0f, 0.5f, 2.0f));
+	btCollisionShape *chassisShape = new btBoxShape(btVector3(1.0f, 0.75f, 2.7f));
+
+	// Create a compound shape to adjust the center of gravity
+	btCompoundShape *compoundShape = new btCompoundShape();
+
+	// Shift the chassis shape upwards to lower the center of gravity
+	btTransform chassisTransform;
+	chassisTransform.setIdentity();
+	chassisTransform.setOrigin(btVector3(0, 0.5f, 0)); // Adjust the Y-value to lower CoG
+
+	// Add the chassis shape to the compound shape with the offset
+	compoundShape->addChildShape(chassisTransform, chassisShape);
 
 	btTransform startTransform;
 	startTransform.setIdentity();
+	startTransform.setBasis(btMatrix3x3(-1, 0, 0, 0, 1, 0, 0, 0, -1));
 	startTransform.setOrigin(btVector3(startPosition.x, startPosition.y, startPosition.z));
 
 	btScalar mass(m_params.mass);
 	btVector3 localInertia(0, 0, 0);
-	chassisShape->calculateLocalInertia(mass, localInertia);
+	compoundShape->calculateLocalInertia(mass, localInertia);
 
 	// Create rigid body
 	btDefaultMotionState *motionState = new btDefaultMotionState(startTransform);
-	btRigidBody::btRigidBodyConstructionInfo rbInfo(mass, motionState, chassisShape, localInertia);
+	btRigidBody::btRigidBodyConstructionInfo rbInfo(mass, motionState, compoundShape, localInertia);
 	m_chassisBody = std::unique_ptr<btRigidBody>(new btRigidBody(rbInfo));
 
 	// Vehicle raycaster and vehicle
 	m_raycaster = std::unique_ptr<btVehicleRaycaster>(new btDefaultVehicleRaycaster(world));
 	btRaycastVehicle::btVehicleTuning tuning;
 	m_vehicle = std::unique_ptr<btRaycastVehicle>(new btRaycastVehicle(tuning, m_chassisBody.get(), m_raycaster.get()));
-	m_vehicle->setCoordinateSystem(2, 1, 0);
+	m_vehicle->setCoordinateSystem(0, 1, 2);
 
 	// Configure wheels
 	btVector3 wheelDirectionCS0(0, -1, 0);
@@ -31,12 +43,12 @@ VehicleController::VehicleController(btDynamicsWorld *world, const glm::vec3 &st
 
 	// Add wheels
 	bool isFrontWheel = true;
-	m_vehicle->addWheel(btVector3(1.0f, 0, 1.5f), wheelDirectionCS0, wheelAxleCS, m_params.suspensionRestLength, m_params.wheelRadius, tuning, isFrontWheel);
-	m_vehicle->addWheel(btVector3(-1.0f, 0, 1.5f), wheelDirectionCS0, wheelAxleCS, m_params.suspensionRestLength, m_params.wheelRadius, tuning, isFrontWheel);
+	m_vehicle->addWheel(btVector3(1.0f, 0, 1.825f), wheelDirectionCS0, wheelAxleCS, m_params.suspensionRestLength, m_params.wheelRadius, tuning, isFrontWheel);
+	m_vehicle->addWheel(btVector3(-1.0f, 0, 1.825f), wheelDirectionCS0, wheelAxleCS, m_params.suspensionRestLength, m_params.wheelRadius, tuning, isFrontWheel);
 
 	isFrontWheel = false;
-	m_vehicle->addWheel(btVector3(1.0f, 0, -1.5f), wheelDirectionCS0, wheelAxleCS, m_params.suspensionRestLength, m_params.wheelRadius, tuning, isFrontWheel);
-	m_vehicle->addWheel(btVector3(-1.0f, 0, -1.5f), wheelDirectionCS0, wheelAxleCS, m_params.suspensionRestLength, m_params.wheelRadius, tuning, isFrontWheel);
+	m_vehicle->addWheel(btVector3(1.0f, 0, -1.4f), wheelDirectionCS0, wheelAxleCS, m_params.suspensionRestLength, m_params.wheelRadius, tuning, isFrontWheel);
+	m_vehicle->addWheel(btVector3(-1.0f, 0, -1.4f), wheelDirectionCS0, wheelAxleCS, m_params.suspensionRestLength, m_params.wheelRadius, tuning, isFrontWheel);
 
 	// Tune wheels
 	for (int i = 0; i < m_vehicle->getNumWheels(); i++) {
@@ -60,32 +72,27 @@ void VehicleController::Update(float deltaTime) {
 	btVector3 origin = transform.getOrigin();
 	m_position = glm::vec3(origin.x(), origin.y(), origin.z());
 
+	// Offset the vehicle position to match the center of the chassis
+	btVector3 offset = .35f * m_vehicle->getForwardVector() - .1f * transform.getBasis().getColumn(1);
+	m_position += glm::vec3(offset.x(), offset.y(), offset.z());
+
 	btQuaternion orientation = transform.getRotation();
-	orientation *= btQuaternion(btVector3(0, 1, 0), SIMD_PI);
-	btMatrix3x3 rotationMatrix(orientation);
-
-	btVector3 forward = -rotationMatrix.getColumn(2);
-	btVector3 right = rotationMatrix.getColumn(0);
-	btVector3 up = rotationMatrix.getColumn(1);
-
-	// Update rotation
-	m_rotation = Transform::GetRotation(glm::inverse(glm::mat3(
-		right.x(), right.y(), right.z(),
-		up.x(), up.y(), up.z(),
-		forward.x(), forward.y(), forward.z()
-	)));
+	m_orientation = glm::quat(orientation.w(), orientation.x(), orientation.y(), orientation.z());
 
 	// Update wheels
-	//for (int i = 0; i < m_vehicle->getNumWheels(); i++) {
-	//	m_vehicle->updateWheelTransform(i, true);
-	//	btTransform wheelTransform = m_vehicle->getWheelTransformWS(i);
-	//	btVector3 wheelOrigin = wheelTransform.getOrigin();
-	//	btQuaternion wheelRotation = wheelTransform.getRotation();
-	//	// Update wheel transforms
-	//	glm::vec3 wheelPosition(wheelOrigin.x(), wheelOrigin.y(), wheelOrigin.z());
-	//	glm::quat wheelRotationQuat(wheelRotation.w(), wheelRotation.x(), wheelRotation.y(), wheelRotation.z());
-	//	// TODO: Update wheel transforms
-	//}
+	m_wheels.clear();
+	for (int i = 0; i < m_vehicle->getNumWheels(); i++)
+	{
+		m_vehicle->updateWheelTransform(i, true);
+		btTransform wheelTransform = m_vehicle->getWheelTransformWS(i);
+		btVector3 wheelOrigin = wheelTransform.getOrigin();
+		btQuaternion wheelRotation = wheelTransform.getRotation();
+
+		Wheel wheel;
+		wheel.position = glm::vec3(wheelOrigin.x(), wheelOrigin.y(), wheelOrigin.z());
+		wheel.orientation = glm::quat(wheelRotation.w(), wheelRotation.x(), wheelRotation.y(), wheelRotation.z());
+		m_wheels.push_back(wheel);
+	}
 }
 
 void VehicleController::ApplyEngineForce(float force) {

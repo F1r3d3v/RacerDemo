@@ -10,17 +10,20 @@
 #include <Engine/Renderer.h>
 #include <Engine/Input.h>
 #include <Engine/Scene.h>
-#include <Objects/Vehicle.h>
-#include <Physics/BulletDebugDrawer.h>
 #include <format>
 
+#include "Objects/Vehicle.h"
+#include "Physics/BulletDebugDrawer.h"
 #include "Config.h"
 
 static std::unique_ptr<Scene> scene;
-static std::shared_ptr<Camera> cameras[3];
+static std::shared_ptr<Camera> cameras[4];
 static std::shared_ptr<PointLight> light2;
+static std::shared_ptr<SpotLight> vehicleLight1;
+static std::shared_ptr<SpotLight> vehicleLight2;
 static std::shared_ptr<Model> model1;
 static std::shared_ptr<Model> model2;
+static std::shared_ptr<Terrain> terrain;
 static std::shared_ptr<Vehicle> vehicle;
 static BulletDebugDrawer *debugDrawer = nullptr;
 
@@ -31,7 +34,7 @@ MyApp::MyApp(std::string title, int width, int height)
 	: App(title, width, height)
 	, m_physicsManager(std::make_unique<PhysicsManager>())
 {
-	SetVSync(false);
+	SetVSync(true);
 }
 
 MyApp::~MyApp()
@@ -52,9 +55,9 @@ void MyApp::OnStart()
 	cameras[0] = std::make_shared<Camera>();
 	cameras[1] = std::make_shared<Camera>();
 	cameras[2] = std::make_shared<Camera>();
+	cameras[3] = std::make_shared<Camera>();
 
 	cameras[0]->SetPosition(glm::vec3(0.0f, 0.0f, 0.0f));
-	cameras[0]->LookAt(glm::vec3(0.0f, 0.0f, 1.0f));
 	cameras[0]->SetPerspective(45.0f, (float)Config::WINDOW_WIDTH / Config::WINDOW_HEIGHT, 0.1f, 2000.0f);
 
 	cameras[1]->SetPosition(glm::vec3(0.0f, 0.0f, 0.0f));
@@ -63,7 +66,12 @@ void MyApp::OnStart()
 	cameras[2]->SetPosition(glm::vec3(-32.0f, 16.0f, 16.0f));
 	cameras[2]->SetPerspective(60.0f, (float)Config::WINDOW_WIDTH / Config::WINDOW_HEIGHT, 0.1f, 2000.0f);
 
+	cameras[3]->SetPosition(glm::vec3(0.0f, 0.0f, 0.0f));
+	cameras[3]->SetPerspective(45.0f, (float)Config::WINDOW_WIDTH / Config::WINDOW_HEIGHT, 0.1f, 2000.0f);
+
 	scene->SetCamera(cameras[0]);
+	m_cameraController = std::make_unique<RacingCameraController>(cameras[0]);
+	m_flyCameraController = std::make_unique<FlyCameraController>(cameras[3]);
 
 	model1 = Model::LoadFromFile("assets/models/ball/ball.obj");
 	model1->SetPosition(glm::vec3(5.0f, 0.0f, 0.0f));
@@ -74,7 +82,7 @@ void MyApp::OnStart()
 	model2->SetScale(glm::vec3(0.5f));
 	auto node2 = scene->AddObject(model2, node1.get());
 
-	auto light = std::make_shared<PointLight>(Light::Properties{ glm::vec3(0.8f), 1.0f, 100.0f });
+	auto light = std::make_shared<PointLight>(Light::Properties{ glm::vec3(0.0f, 0.0f, 1.0f), 1.0f, 100.0f });
 	light->SetPosition(glm::vec3(0.0f, 0.0f, 0.0f));
 	scene->AddLight(light);
 	cameras[2]->LookAt(light->GetPosition());
@@ -83,21 +91,21 @@ void MyApp::OnStart()
 	light2->LookAt(glm::vec3(0.0f, -1.0f, 0.0f));
 	scene->AddLight(light2, node1.get());
 
-	auto terrain = std::make_shared<Terrain>();
+	terrain = std::make_shared<Terrain>();
 	terrain->SetHeightmap(ResourceManager::Get().Load<Texture>("TerrainHeight"));
 	auto shader = terrain->GetMaterial()->GetShader();
 	auto mat = ResourceManager::Get().Load<Material>("TerrainMaterial");
 	mat->SetShader(shader);
 	terrain->SetMaterial(mat);
-	terrain->SetHeightScale(256.0);
-	//terrain->SetWorldScale(0.5);
+	terrain->SetHeightScale(128.0);
+	terrain->SetWorldScale(0.5);
 	terrain->SetPosition({ 0.0f, -15, 0.0f });
 	scene->AddObject(terrain);
 
 	// Generate collision mesh for terrain
 	std::vector<glm::vec3> vertices;
 	std::vector<uint32_t> indices;
-	terrain->GenerateCollisionMesh(128, vertices, indices);
+	terrain->GenerateCollisionMesh(1024, vertices, indices);
 	btTriangleMesh *bulletMesh = new btTriangleMesh();
 	for (size_t i = 0; i < indices.size(); i += 4)
 	{
@@ -123,18 +131,30 @@ void MyApp::OnStart()
 	btRigidBody::btRigidBodyConstructionInfo rigidBodyCI(0, motionState, terrainShape, btVector3(0, 0, 0));
 	btRigidBody *terrainBody = new btRigidBody(rigidBodyCI);
 	m_physicsManager->AddRigidBody(terrainBody);
-	
-	//auto vehicleModel = Model::LoadFromFile("assets/models/pickup_car/Hilux.obj");
-	auto cube = Model::LoadFromFile("assets/models/cube/cube.obj");
+
+	auto wheelModel = Model::LoadFromFile("assets/models/pickup_car/Wheel.obj");
+	auto vehicleModel = Model::LoadFromFile("assets/models/pickup_car/Hilux.obj");
 	vehicle = std::make_shared<Vehicle>(
 		m_physicsManager->GetDynamicsWorld(),
-		cube,
-		glm::vec3(0, 50, 10)
+		vehicleModel, wheelModel,
+		glm::vec3(0, 0, 10)
 	);
-	scene->AddObject(vehicle);
+	auto vehicleNode = scene->AddObject(vehicle);
+	vehicleLight1 = std::make_shared<SpotLight>(Light::Properties{ glm::vec3(1.0f, 1.0f, 1.0f), 0.0f, 200.0f });
+	vehicleLight1->LookAt(glm::vec3(0.0f, 0.0f, 1.0f));
+	vehicleLight1->SetPosition(glm::vec3(-0.755f, -0.1f, 2.2f));
+	scene->AddLight(vehicleLight1, vehicleNode.get());
+	vehicleLight2 = std::make_shared<SpotLight>(Light::Properties{ glm::vec3(1.0f, 1.0f, 1.0f), 0.0f, 200.0f });
+	vehicleLight2->LookAt(glm::vec3(0.0f, 0.0f, 1.0f));
+	vehicleLight2->SetPosition(glm::vec3(0.75f, -0.1f, 2.2f));
+	scene->AddLight(vehicleLight2, vehicleNode.get());
 
-	debugDrawer = new BulletDebugDrawer();	
-	m_physicsManager->GetDynamicsWorld()->setDebugDrawer(debugDrawer);
+	auto cube = Model::LoadFromFile("assets/models/cottage/cottage_obj.obj");
+	cube->SetPosition(glm::vec3(50.0f, -4.0f, -30.0f));
+	scene->AddObject(cube);
+
+	//debugDrawer = new BulletDebugDrawer();
+	//m_physicsManager->GetDynamicsWorld()->setDebugDrawer(debugDrawer);
 }
 
 void MyApp::OnLoad(ResourceManager *rm)
@@ -181,6 +201,42 @@ void MyApp::OnUpdate(float deltaTime)
 	if (Input::IsKeyPressed(GLFW_KEY_F1))
 		SetWireframe(!GetWireframe());
 
+	if (Input::IsKeyPressed(GLFW_KEY_TAB))
+	{
+		m_EnterGame = !m_EnterGame;
+		GetWindow()->SetCursorEnabled(!m_EnterGame);
+	}
+
+	if (m_EnterGame)
+	{
+		if (Input::IsKeyPressed(GLFW_KEY_1))
+		{
+			scene->SetCamera(cameras[0]);
+			m_SelectedCamera = 0;
+		}
+		else if (Input::IsKeyPressed(GLFW_KEY_2))
+		{
+			scene->SetCamera(cameras[1]);
+			m_SelectedCamera = 1;
+		}
+		else if (Input::IsKeyPressed(GLFW_KEY_3))
+		{
+			scene->SetCamera(cameras[2]);
+			m_SelectedCamera = 2;
+		}
+		else if (Input::IsKeyPressed(GLFW_KEY_4))
+		{
+			scene->SetCamera(cameras[3]);
+			m_SelectedCamera = 3;
+		}
+	}
+
+	if (m_SelectedCamera == 3)
+	{
+		if (m_EnterGame)
+			m_flyCameraController->Update(deltaTime);
+	}
+
 	cameras[1]->LookAt(model1->GetPosition());
 	auto camera = scene->GetCamera();
 
@@ -191,70 +247,89 @@ void MyApp::OnUpdate(float deltaTime)
 	cubeRot.y += 30.0f * deltaTime;
 	cubeRot.x += 30.0f * deltaTime;
 
-	glm::vec3 forward = camera->GetForward();
-	glm::vec3 right = camera->GetRight();
-	glm::vec3 up = camera->GetUp();
-
-	// Camera movement
-	glm::vec3 cameraSpeed = glm::vec3(5.0f * deltaTime);
-	if (Input::IsKeyDown(GLFW_KEY_LEFT_SHIFT))
-		cameraSpeed *= 10.0f;
-	if (Input::IsKeyDown(GLFW_KEY_LEFT_CONTROL))
-		cameraSpeed *= 0.5f;
-	if (Input::IsKeyDown(GLFW_KEY_W))
-		camera->Move(forward * cameraSpeed);
-	if (Input::IsKeyDown(GLFW_KEY_S))
-		camera->Move(-forward * cameraSpeed);
-	if (Input::IsKeyDown(GLFW_KEY_A))
-		camera->Move(-right * cameraSpeed);
-	if (Input::IsKeyDown(GLFW_KEY_D))
-		camera->Move(right * cameraSpeed);
-	if (Input::IsKeyDown(GLFW_KEY_Q))
-		camera->Move(-up * cameraSpeed);
-	if (Input::IsKeyDown(GLFW_KEY_E))
-		camera->Move(up * cameraSpeed);
-
-	if (Input::IsKeyPressed(GLFW_KEY_TAB))
-	{
-		m_EnterGame = !m_EnterGame;
-		GetWindow()->SetCursorEnabled(!m_EnterGame);
-	}
-
-	if (m_EnterGame)
-	{
-		double xpos, ypos;
-		Input::GetMouseDelta(xpos, ypos);
-		glm::vec2 mouseDelta(xpos, ypos);
-
-		float sensitivity = 0.1f;
-		mouseDelta *= sensitivity;
-
-		camera->Rotate(glm::vec3(-mouseDelta.y, mouseDelta.x, 0.0f));
-	}
-
-	// Update physics
 	auto controller = vehicle->GetController();
-	// Basic vehicle controls
-	controller->ApplyEngineForce(0.0f);
-	controller->Steer(0.0f);
-	controller->Brake(0.0f);
-	if (Input::IsKeyDown(GLFW_KEY_UP))
-		controller->ApplyEngineForce(1000.0f);
-	if (Input::IsKeyDown(GLFW_KEY_DOWN))
-		controller->ApplyEngineForce(-1000.0f);
-	if (Input::IsKeyDown(GLFW_KEY_LEFT))
-		controller->Steer(0.5f);
-	if (Input::IsKeyDown(GLFW_KEY_RIGHT))
-		controller->Steer(-0.5f);
-	if (Input::IsKeyDown(GLFW_KEY_SPACE))
-		controller->Brake(65.0f);
 	controller->GetChassisBody()->activate(true);
 
-	if (Input::IsKeyPressed(GLFW_KEY_R))
-		controller->Flip();
+	if (m_SelectedCamera == 0)
+	{
+		static float steeringAngle = 0.0f;
+		const float maxSteeringAngle = 0.5f;
+		const float steeringSpeed = 1.0f;
+
+		float targetSteeringAngle = 0.0f;
+		if (Input::IsKeyDown(GLFW_KEY_A) && m_EnterGame)
+			targetSteeringAngle = maxSteeringAngle;
+		else if (Input::IsKeyDown(GLFW_KEY_D) && m_EnterGame)
+			targetSteeringAngle = -maxSteeringAngle;
+
+		if (steeringAngle < targetSteeringAngle)
+		{
+			steeringAngle += steeringSpeed * deltaTime;
+			if (steeringAngle > targetSteeringAngle)
+				steeringAngle = targetSteeringAngle;
+		}
+		else if (steeringAngle > targetSteeringAngle)
+		{
+			steeringAngle -= steeringSpeed * deltaTime;
+			if (steeringAngle < targetSteeringAngle)
+				steeringAngle = targetSteeringAngle;
+		}
+
+		controller->Steer(steeringAngle);
+
+		static float engineForce = 0.0f;
+		const float maxEngineForce = 1000.0f;
+		const float engineForceSpeed = 2000.0f;
+
+		float targetEngineForce = 0.0f;
+		if (Input::IsKeyDown(GLFW_KEY_W) && m_EnterGame)
+			targetEngineForce = maxEngineForce;
+		else if (Input::IsKeyDown(GLFW_KEY_S) && m_EnterGame)
+			targetEngineForce = -maxEngineForce;
+
+		if (engineForce < targetEngineForce)
+		{
+			engineForce += engineForceSpeed * deltaTime;
+			if (engineForce > targetEngineForce)
+				engineForce = targetEngineForce;
+		}
+		else if (engineForce > targetEngineForce)
+		{
+			engineForce -= engineForceSpeed * deltaTime;
+			if (engineForce < targetEngineForce)
+				engineForce = targetEngineForce;
+		}
+
+		controller->ApplyEngineForce(engineForce);
+
+		float brakeForce = 0.0f;
+		if (Input::IsKeyDown(GLFW_KEY_SPACE) && m_EnterGame)
+			brakeForce = 25.0f;
+
+		controller->Brake(brakeForce);
+
+		if (Input::IsKeyPressed(GLFW_KEY_R) && m_EnterGame)
+			controller->Flip();
+	}
+	else
+	{
+		controller->Steer(0.0f);
+		controller->ApplyEngineForce(0.0f);
+		controller->Brake(25.0f);
+	}
 
 	vehicle->Update(deltaTime);
 	m_physicsManager->Update(deltaTime);
+
+	btVector3 forwardVec = controller->GetBulletVehicle()->getForwardVector();
+	m_cameraController->SetTarget(
+		controller->GetPosition(),
+		glm::vec3(forwardVec.x(), forwardVec.y(), forwardVec.z()),
+		vehicle->GetWorldUp(),
+		controller->GetVehicleVelocity()
+	);
+
+	m_cameraController->Update(deltaTime);
 }
 
 void MyApp::OnRender(Renderer *renderer)
@@ -265,13 +340,13 @@ void MyApp::OnRender(Renderer *renderer)
 	model2->SetRotation(glm::cross(glm::vec3(2.0f), cubeRot));
 
 	scene->Draw(renderer);
-	static bool first = true;
-	if (first)
-	{
-		first = false;
-	}
-		m_physicsManager->GetDynamicsWorld()->debugDrawWorld();
-	debugDrawer->Draw();
+	//static bool first = true;
+	//if (first)
+	//{
+	//	first = false;
+	//}
+	//m_physicsManager->GetDynamicsWorld()->debugDrawWorld();
+	//debugDrawer->Draw();
 }
 
 void MyApp::OnImGuiRender()
@@ -285,29 +360,32 @@ void MyApp::OnImGuiRender()
 		ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x, 0), ImGuiCond_Always, ImVec2(1.0f, 0.0f));
 		ImGui::Begin("Control Panel", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
 
-		// Set Camera index via combo
 		ImGui::Text("Camera");
-		if (ImGui::Combo("##Camera", &m_SelectedCamera, "Camera 1\0Camera 2\0Camera 3\0"))
+		if (ImGui::Combo("##Camera", &m_SelectedCamera, "Camera 1\0Camera 2\0Camera 3\0Camera 4\0"))
 			scene->SetCamera(cameras[m_SelectedCamera]);
 
-		// Write as text Camera position, rotation and FOV
 		auto camera = scene->GetCamera();
 		auto pos = camera->GetPosition();
 		auto rot = camera->GetRotation();
 		auto fov = camera->GetFov();
+		auto forward = camera->GetForward();
+		auto right = camera->GetRight();
+		auto up = camera->GetUp();
+		ImGui::Text("Forward: %.2f %.2f %.2f", forward.x, forward.y, forward.z);
+		ImGui::Text("Right: %.2f %.2f %.2f", right.x, right.y, right.z);
+		ImGui::Text("Up: %.2f %.2f %.2f", up.x, up.y, up.z);
 		ImGui::Text("Position: %.2f %.2f %.2f", pos.x, pos.y, pos.z);
 		ImGui::Text("Rotation: %.2f %.2f %.2f", rot.x, rot.y, rot.z);
-		ImGui::Text("FOV: %.2f", fov);
 
-		// Write as text Model position and rotation
 		auto vehiclePos = vehicle->GetController()->GetPosition();
-		auto vehicleRot = vehicle->GetController()->GetRotation();
+		auto vehicleRot = glm::degrees(glm::eulerAngles(vehicle->GetController()->GetOrientation()));
+		auto forwardVec = vehicle->GetController()->GetBulletVehicle()->getForwardVector();
+		ImGui::Text("Forward: %.2f %.2f %.2f", forwardVec.x(), forwardVec.y(), forwardVec.z());
 		ImGui::Text("Vehicle Position: %.2f %.2f %.2f", vehiclePos.x, vehiclePos.y, vehiclePos.z);
 		ImGui::Text("Vehicle Rotation: %.2f %.2f %.2f", vehicleRot.x, vehicleRot.y, vehicleRot.z);
 		auto velocity = vehicle->GetController()->GetVehicleVelocity();
 		ImGui::Text("Vehicle Velocity: %.2f %.2f %.2f", velocity.x, velocity.y, velocity.z);
 
-		// Change camera perspective
 		if (ImGui::CollapsingHeader("Camera Settings"))
 		{
 			bool perspective = camera->GetProjectionType() == Camera::ProjectionType::Perspective;
@@ -334,15 +412,12 @@ void MyApp::OnImGuiRender()
 					camera->SetPerspective(camera->GetFov(), camera->GetAspectRatio(), camera->GetNearPlane(), farPlane);
 			}
 
-
-			// Toggle wireframe
 			bool wireframe = GetWireframe();
 			if (ImGui::Checkbox("Wireframe", &wireframe))
 				SetWireframe(wireframe);
 
 			ImGui::SameLine();
 
-			// Toggle perspective
 			if (ImGui::Checkbox("Perspective", &perspective))
 			{
 				if (perspective)
@@ -378,6 +453,41 @@ void MyApp::OnImGuiRender()
 			if (ImGui::Checkbox("Enable Fog", &fogEnabled))
 				scene->EnableFog(fogEnabled);
 		}
+
+
+		if (ImGui::CollapsingHeader("Vehicle"))
+		{
+			// turn on /off vehicle lights
+			static bool vehicleLights = false;
+			if (ImGui::Checkbox("Vehicle Lights", &vehicleLights))
+			{
+				// Set intensity to 0 if lights are off
+				float intensity = vehicleLights ? 1.0f : 0.0f;
+				vehicleLight1->SetIntensity(intensity);
+				vehicleLight2->SetIntensity(intensity);
+			}
+
+			static float lightAngle = 0;
+			if (ImGui::SliderFloat("Light Angle", &lightAngle, -45.0f, 45.0f))
+			{
+				vehicleLight1->LookAt(vehicleLight1->GetPosition() + glm::vec3(0.0f, 0.0f, 1.0f));
+				vehicleLight1->Rotate(glm::vec3(-lightAngle, 0.0f, 0.0f));
+
+				vehicleLight2->LookAt(vehicleLight2->GetPosition() + glm::vec3(0.0f, 0.0f, 1.0f));
+				vehicleLight2->Rotate(glm::vec3(-lightAngle, 0.0f, 0.0f));
+			}
+			// Front light focus
+			float lightFocus = vehicleLight1->GetFocus();
+			if (ImGui::SliderFloat("Light Focus", &lightFocus, 1.0f, 32.0f))
+			{
+				vehicleLight1->SetFocus(lightFocus);
+				vehicleLight2->SetFocus(lightFocus);
+			}
+
+			if (ImGui::Button("Flip"))
+				vehicle->GetController()->Flip();
+		}
+
 
 		ImGui::SetWindowSize(ImVec2(ImGui::GetWindowWidth(), 0.0));
 		ImGui::End();

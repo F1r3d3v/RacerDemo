@@ -22,17 +22,11 @@ Camera::~Camera()
 {
 }
 
-void Camera::UpdateState()
-{
-	Transform::UpdateState();
-	m_viewChanged = true;
-}
-
 glm::mat4 Camera::GetViewMatrix() const
 {
 	if (m_viewChanged)
 	{
-		m_viewMatrix = glm::lookAt(m_position, m_position + m_forward, m_up);
+		m_viewMatrix = glm::lookAt(m_position, m_position + GetForward(), GetUp());
 		m_viewChanged = false;
 	}
 	return m_viewMatrix;
@@ -93,9 +87,9 @@ void Camera::Rotate(const glm::vec3 &angles)
 	m_viewChanged = true;
 }
 
-void Camera::LookAt(const glm::vec3 &target, const glm::vec3 &up, const glm::vec3 &altUp)
+void Camera::LookAt(const glm::vec3 &target, const glm::vec3 &up)
 {
-	Transform::LookAt(target, up, altUp);
+	Transform::LookAt(target, up);
 	m_viewChanged = true;
 }
 

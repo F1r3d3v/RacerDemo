@@ -1,6 +1,9 @@
 #pragma once
 #include "Engine/App.h"
 #include "Physics/PhysicsManager.h"
+#include "CameraController/RacingCameraController.h"
+#include "CameraController/FlyCameraController.h"
+
 
 #include <imgui.h>
 
@@ -22,5 +25,7 @@ private:
 	bool m_controlPanel = true;
 
 	std::unique_ptr<PhysicsManager> m_physicsManager;
+	std::unique_ptr<RacingCameraController> m_cameraController;
+	std::unique_ptr<FlyCameraController> m_flyCameraController;
 };
 

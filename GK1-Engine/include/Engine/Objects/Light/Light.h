@@ -17,6 +17,15 @@ public:
 	void SetProperties(const Properties &props) { m_properties = props; }
 	const Properties &GetProperties() const { return m_properties; }
 
+	void SetColor(const glm::vec3 &color) { m_properties.color = color; }
+	const glm::vec3 &GetColor() const { return m_properties.color; }
+
+	void SetIntensity(float intensity) { m_properties.intensity = intensity; }
+	float GetIntensity() const { return m_properties.intensity; }
+
+	void SetRadius(float radius) { m_properties.radius = radius; }
+	float GetRadius() const { return m_properties.radius; }
+
 	friend class LightManager;
 
 protected:

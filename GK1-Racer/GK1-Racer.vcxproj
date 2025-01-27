@@ -26,7 +26,9 @@
     <ClInclude Include="include\Physics\VehicleController.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="include\CameraController\FlyCameraController.h" />
     <ClCompile Include="include\CameraController\RacingCameraController.h" />
+    <ClCompile Include="src\CameraController\FlyCameraController.cpp" />
     <ClCompile Include="src\Objects\Vehicle.cpp" />
     <ClCompile Include="src\Physics\VehicleController.cpp" />
     <ClCompile Include="src\Physics\PhysicsManager.cpp" />

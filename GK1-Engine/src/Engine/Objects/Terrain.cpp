@@ -292,7 +292,7 @@ void Terrain::GenerateCollisionMesh(uint32_t gridSize, std::vector<glm::vec3> &v
 	{
 		for (uint32_t x = 0; x < gridSize; ++x)
 		{
-			float value = m_heightmap->GetPixel<uint16_t>(x * spacing * (width - 1), (1.0f - z * spacing) * (height - 1)).r * m_heightScale;
+			float value = m_heightmap->GetPixel<uint16_t>(x * spacing * (width - 1), (1.0f - z * spacing) * (height - 1)).r * 2 * m_heightScale;
 			vertices.push_back(glm::vec3(width * (x * spacing - 0.5f) * m_WorldScale, value, height * (z * spacing - 0.5f) * m_WorldScale));
 		}
 	}
