@@ -405,4 +405,6 @@ FodyWeavers.xsd
 #ImGui
 **/imgui.ini
 
-!GK1-Racer/Assets/**/*.*
+!GK1-Racer/lib/bullet3d/lib/**/*.*
+!GK1-Racer/assets/**/*.*
+!GK1-Engine/lib/**/*.*

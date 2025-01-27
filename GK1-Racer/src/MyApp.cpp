@@ -34,6 +34,7 @@ MyApp::MyApp(std::string title, int width, int height)
 	: App(title, width, height)
 	, m_physicsManager(std::make_unique<PhysicsManager>())
 {
+	// Physics simulation break when unlocking the framerate
 	SetVSync(true);
 }
 
@@ -137,7 +138,7 @@ void MyApp::OnStart()
 	vehicle = std::make_shared<Vehicle>(
 		m_physicsManager->GetDynamicsWorld(),
 		vehicleModel, wheelModel,
-		glm::vec3(0, 0, 10)
+		glm::vec3(0, -2, 10)
 	);
 	auto vehicleNode = scene->AddObject(vehicle);
 	vehicleLight1 = std::make_shared<SpotLight>(Light::Properties{ glm::vec3(1.0f, 1.0f, 1.0f), 0.0f, 200.0f });
@@ -195,10 +196,10 @@ void MyApp::OnUpdate(float deltaTime)
 	if (Input::IsKeyPressed(GLFW_KEY_ESCAPE))
 		Close();
 
-	if (Input::IsKeyPressed(GLFW_KEY_F2))
+	if (Input::IsKeyPressed(GLFW_KEY_F1))
 		m_controlPanel = !m_controlPanel;
 
-	if (Input::IsKeyPressed(GLFW_KEY_F1))
+	if (Input::IsKeyPressed(GLFW_KEY_F2))
 		SetWireframe(!GetWireframe());
 
 	if (Input::IsKeyPressed(GLFW_KEY_TAB))
@@ -240,7 +241,6 @@ void MyApp::OnUpdate(float deltaTime)
 	cameras[1]->LookAt(model1->GetPosition());
 	auto camera = scene->GetCamera();
 
-	// Cube pos and rot
 	cubePos.x = 5.0f * (float)glm::sin(glfwGetTime() / 2);
 	cubePos.z = 5.0f * (float)glm::cos(glfwGetTime() / 2);
 	cubePos.y = 0.0f;
@@ -253,7 +253,7 @@ void MyApp::OnUpdate(float deltaTime)
 	if (m_SelectedCamera == 0)
 	{
 		static float steeringAngle = 0.0f;
-		const float maxSteeringAngle = 0.5f;
+		const float maxSteeringAngle = 0.65f;
 		const float steeringSpeed = 1.0f;
 
 		float targetSteeringAngle = 0.0f;
@@ -278,8 +278,8 @@ void MyApp::OnUpdate(float deltaTime)
 		controller->Steer(steeringAngle);
 
 		static float engineForce = 0.0f;
-		const float maxEngineForce = 1000.0f;
-		const float engineForceSpeed = 2000.0f;
+		const float maxEngineForce = 500.0f;
+		const float engineForceSpeed = 750.0f;
 
 		float targetEngineForce = 0.0f;
 		if (Input::IsKeyDown(GLFW_KEY_W) && m_EnterGame)
@@ -371,20 +371,22 @@ void MyApp::OnImGuiRender()
 		auto forward = camera->GetForward();
 		auto right = camera->GetRight();
 		auto up = camera->GetUp();
-		ImGui::Text("Forward: %.2f %.2f %.2f", forward.x, forward.y, forward.z);
-		ImGui::Text("Right: %.2f %.2f %.2f", right.x, right.y, right.z);
-		ImGui::Text("Up: %.2f %.2f %.2f", up.x, up.y, up.z);
-		ImGui::Text("Position: %.2f %.2f %.2f", pos.x, pos.y, pos.z);
-		ImGui::Text("Rotation: %.2f %.2f %.2f", rot.x, rot.y, rot.z);
+		ImGui::Text("Camera Forward: %.2f %.2f %.2f", forward.x, forward.y, forward.z);
+		ImGui::Text("Camera Right: %.2f %.2f %.2f", right.x, right.y, right.z);
+		ImGui::Text("Camera Up: %.2f %.2f %.2f", up.x, up.y, up.z);
+		ImGui::Text("Camera Position: %.2f %.2f %.2f", pos.x, pos.y, pos.z);
+		ImGui::Text("Camera Rotation: %.2f %.2f %.2f", rot.x, rot.y, rot.z);
 
 		auto vehiclePos = vehicle->GetController()->GetPosition();
 		auto vehicleRot = glm::degrees(glm::eulerAngles(vehicle->GetController()->GetOrientation()));
 		auto forwardVec = vehicle->GetController()->GetBulletVehicle()->getForwardVector();
-		ImGui::Text("Forward: %.2f %.2f %.2f", forwardVec.x(), forwardVec.y(), forwardVec.z());
+		auto velocity = vehicle->GetController()->GetVehicleVelocity();
+		ImGui::Text("Vehicle Forward: %.2f %.2f %.2f", forwardVec.x(), forwardVec.y(), forwardVec.z());
 		ImGui::Text("Vehicle Position: %.2f %.2f %.2f", vehiclePos.x, vehiclePos.y, vehiclePos.z);
 		ImGui::Text("Vehicle Rotation: %.2f %.2f %.2f", vehicleRot.x, vehicleRot.y, vehicleRot.z);
-		auto velocity = vehicle->GetController()->GetVehicleVelocity();
 		ImGui::Text("Vehicle Velocity: %.2f %.2f %.2f", velocity.x, velocity.y, velocity.z);
+		// Velocity length
+		ImGui::Text("Vehicle Speed: %.2f", glm::length(velocity));
 
 		if (ImGui::CollapsingHeader("Camera Settings"))
 		{
@@ -457,7 +459,7 @@ void MyApp::OnImGuiRender()
 
 		if (ImGui::CollapsingHeader("Vehicle"))
 		{
-			// turn on /off vehicle lights
+			// Turn on/off vehicle lights
 			static bool vehicleLights = false;
 			if (ImGui::Checkbox("Vehicle Lights", &vehicleLights))
 			{
@@ -488,6 +490,32 @@ void MyApp::OnImGuiRender()
 				vehicle->GetController()->Flip();
 		}
 
+		if (ImGui::CollapsingHeader("Controls"))
+		{
+			ImGui::BulletText("F1 - Toggle Control Panel");
+			ImGui::BulletText("F2 - Toggle Wireframe");
+			ImGui::BulletText("TAB - Enter Game");
+			ImGui::BulletText("1-4 - Switch Camera");
+			ImGui::BulletText("WASD - Control Vehicle");
+			ImGui::BulletText("Space - Brake");
+			ImGui::BulletText("R - Flip Vehicle");
+		}
+
+		if (ImGui::CollapsingHeader("Documentation"))
+		{
+			ImGui::SeparatorText("Racing Camera");
+			ImGui::TextWrapped("The racing camera is a custom camera controller that follows the vehicle.");
+			ImGui::TextWrapped("It uses the vehicle's position, velocity, and orientation to calculate the camera's position and rotation.");
+			ImGui::TextWrapped("The camera's position is calculated by interpolating between the current camera position and the target camera position.");
+			ImGui::TextWrapped("The camera's target position is calculated by looking at the vehicle's position and adding offsets with given coefficients.");
+			ImGui::TextWrapped("The camera's rotation is calculated by looking at the vehicle's position plus the vehicle's forward vector multiplied by a coefficient and speed.");
+			ImGui::NewLine();
+			ImGui::SeparatorText("Terrain");
+			ImGui::TextWrapped("The terrain is generated from a heightmap texture.");
+			ImGui::TextWrapped("The terrain is a grid of vertices with a given grid size.");
+			ImGui::TextWrapped("The terrain is tessellated using the tessellation control and evaluation shaders.");
+			ImGui::TextWrapped("The terrain tessellation level could be based on the distance from the camera for optimization.");
+		}
 
 		ImGui::SetWindowSize(ImVec2(ImGui::GetWindowWidth(), 0.0));
 		ImGui::End();

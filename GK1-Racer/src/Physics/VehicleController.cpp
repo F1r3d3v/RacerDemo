@@ -3,45 +3,36 @@
 
 VehicleController::VehicleController(btDynamicsWorld *world, const glm::vec3 &startPosition, const VehicleParameters &params)
 	: m_params(params) {
-	// Chassis shape
+
 	btCollisionShape *chassisShape = new btBoxShape(btVector3(1.0f, 0.75f, 2.7f));
-
-	// Create a compound shape to adjust the center of gravity
-	btCompoundShape *compoundShape = new btCompoundShape();
-
-	// Shift the chassis shape upwards to lower the center of gravity
-	btTransform chassisTransform;
-	chassisTransform.setIdentity();
-	chassisTransform.setOrigin(btVector3(0, 0.5f, 0)); // Adjust the Y-value to lower CoG
-
-	// Add the chassis shape to the compound shape with the offset
-	compoundShape->addChildShape(chassisTransform, chassisShape);
 
 	btTransform startTransform;
 	startTransform.setIdentity();
 	startTransform.setBasis(btMatrix3x3(-1, 0, 0, 0, 1, 0, 0, 0, -1));
 	startTransform.setOrigin(btVector3(startPosition.x, startPosition.y, startPosition.z));
 
+	btTransform chassisOffset;
+	chassisOffset.setIdentity();
+	chassisOffset.setOrigin(btVector3(0, -1.5f, 0.0));
+
 	btScalar mass(m_params.mass);
 	btVector3 localInertia(0, 0, 0);
-	compoundShape->calculateLocalInertia(mass, localInertia);
+	chassisShape->calculateLocalInertia(mass, localInertia);
 
 	// Create rigid body
-	btDefaultMotionState *motionState = new btDefaultMotionState(startTransform);
-	btRigidBody::btRigidBodyConstructionInfo rbInfo(mass, motionState, compoundShape, localInertia);
+	btDefaultMotionState *motionState = new btDefaultMotionState(startTransform, chassisOffset);
+	btRigidBody::btRigidBodyConstructionInfo rbInfo(mass, motionState, chassisShape, localInertia);
 	m_chassisBody = std::unique_ptr<btRigidBody>(new btRigidBody(rbInfo));
 
-	// Vehicle raycaster and vehicle
 	m_raycaster = std::unique_ptr<btVehicleRaycaster>(new btDefaultVehicleRaycaster(world));
 	btRaycastVehicle::btVehicleTuning tuning;
 	m_vehicle = std::unique_ptr<btRaycastVehicle>(new btRaycastVehicle(tuning, m_chassisBody.get(), m_raycaster.get()));
 	m_vehicle->setCoordinateSystem(0, 1, 2);
 
-	// Configure wheels
+	// Add wheels
 	btVector3 wheelDirectionCS0(0, -1, 0);
 	btVector3 wheelAxleCS(-1, 0, 0);
 
-	// Add wheels
 	bool isFrontWheel = true;
 	m_vehicle->addWheel(btVector3(1.0f, 0, 1.825f), wheelDirectionCS0, wheelAxleCS, m_params.suspensionRestLength, m_params.wheelRadius, tuning, isFrontWheel);
 	m_vehicle->addWheel(btVector3(-1.0f, 0, 1.825f), wheelDirectionCS0, wheelAxleCS, m_params.suspensionRestLength, m_params.wheelRadius, tuning, isFrontWheel);
@@ -50,7 +41,6 @@ VehicleController::VehicleController(btDynamicsWorld *world, const glm::vec3 &st
 	m_vehicle->addWheel(btVector3(1.0f, 0, -1.4f), wheelDirectionCS0, wheelAxleCS, m_params.suspensionRestLength, m_params.wheelRadius, tuning, isFrontWheel);
 	m_vehicle->addWheel(btVector3(-1.0f, 0, -1.4f), wheelDirectionCS0, wheelAxleCS, m_params.suspensionRestLength, m_params.wheelRadius, tuning, isFrontWheel);
 
-	// Tune wheels
 	for (int i = 0; i < m_vehicle->getNumWheels(); i++) {
 		btWheelInfo &wheel = m_vehicle->getWheelInfo(i);
 		wheel.m_suspensionStiffness = m_params.suspensionStiffness;

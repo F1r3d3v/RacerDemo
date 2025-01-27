@@ -27,6 +27,8 @@ void RacingCameraController::Update(float deltaTime)
 	m_currentPosition += (m_idealPosition - m_currentPosition) * m_racingSettings.followStiffness * deltaTime;
 
 	float speed = glm::length(m_targetVelocity);
+	if (speed < 0.2f)
+		speed = 0.0f;
 	glm::vec3 lookAheadOffset = m_targetForward * (speed * m_racingSettings.lookAheadFactor);
 	glm::vec3 lookAtPosition = m_targetPosition + lookAheadOffset;
 
