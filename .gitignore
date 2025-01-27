@@ -3,6 +3,10 @@
 ##
 ## Get latest from https://github.com/github/gitignore/blob/main/VisualStudio.gitignore
 
+!GK1-Racer/lib/**/*
+!GK1-Racer/assets/**/*
+!GK1-Engine/lib/**/*
+
 # User-specific files
 *.rsuser
 *.suo
@@ -404,7 +408,3 @@ FodyWeavers.xsd
 
 #ImGui
 **/imgui.ini
-
-!GK1-Racer/lib/bullet3d/lib/**/*.*
-!GK1-Racer/assets/**/*.*
-!GK1-Engine/lib/**/*.*

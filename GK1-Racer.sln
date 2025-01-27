@@ -3,15 +3,15 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.11.35327.3
 MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "GK1-Racer", "GK1-Racer\GK1-Racer.vcxproj", "{AB8EFDCF-F30B-48B1-8F72-BE9196951639}"
+	ProjectSection(ProjectDependencies) = postProject
+		{062A0631-13B4-487B-98C8-A2985057FAEB} = {062A0631-13B4-487B-98C8-A2985057FAEB}
+	EndProjectSection
+EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "GK1-Engine", "GK1-Engine\GK1-Engine.vcxproj", "{062A0631-13B4-487B-98C8-A2985057FAEB}"
 	ProjectSection(ProjectDependencies) = postProject
 		{AB735E04-6751-4AAA-AC01-9C826B36287A} = {AB735E04-6751-4AAA-AC01-9C826B36287A}
 		{D6EF9297-1905-4719-AAE7-CEE335503356} = {D6EF9297-1905-4719-AAE7-CEE335503356}
-	EndProjectSection
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "GK1-Racer", "GK1-Racer\GK1-Racer.vcxproj", "{AB8EFDCF-F30B-48B1-8F72-BE9196951639}"
-	ProjectSection(ProjectDependencies) = postProject
-		{062A0631-13B4-487B-98C8-A2985057FAEB} = {062A0631-13B4-487B-98C8-A2985057FAEB}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ImGUI", "GK1-Engine\lib\ImGUI\ImGUI.vcxproj", "{AB735E04-6751-4AAA-AC01-9C826B36287A}"
