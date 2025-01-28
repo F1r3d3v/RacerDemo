@@ -21,4 +21,7 @@ public:
 	void SetGeometry(std::shared_ptr<Geometry> geometry) { this->geometry = geometry; }
 	void SetMaterial(std::shared_ptr<Material> material) { this->material = material; }
 
+	glm::vec3 GetMinBounds() const;
+	glm::vec3 GetMaxBounds() const;
+
 };

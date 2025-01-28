@@ -238,14 +238,13 @@ void MyApp::OnUpdate(float deltaTime)
 			m_flyCameraController->Update(deltaTime);
 	}
 
-	cameras[1]->LookAt(model1->GetPosition());
-	auto camera = scene->GetCamera();
-
 	cubePos.x = 5.0f * (float)glm::sin(glfwGetTime() / 2);
 	cubePos.z = 5.0f * (float)glm::cos(glfwGetTime() / 2);
 	cubePos.y = 0.0f;
 	cubeRot.y += 30.0f * deltaTime;
 	cubeRot.x += 30.0f * deltaTime;
+
+	cameras[1]->LookAt(model1->GetPosition());
 
 	auto controller = vehicle->GetController();
 	controller->GetChassisBody()->activate(true);
@@ -328,7 +327,6 @@ void MyApp::OnUpdate(float deltaTime)
 		vehicle->GetWorldUp(),
 		controller->GetVehicleVelocity()
 	);
-
 	m_cameraController->Update(deltaTime);
 }
 
@@ -385,7 +383,6 @@ void MyApp::OnImGuiRender()
 		ImGui::Text("Vehicle Position: %.2f %.2f %.2f", vehiclePos.x, vehiclePos.y, vehiclePos.z);
 		ImGui::Text("Vehicle Rotation: %.2f %.2f %.2f", vehicleRot.x, vehicleRot.y, vehicleRot.z);
 		ImGui::Text("Vehicle Velocity: %.2f %.2f %.2f", velocity.x, velocity.y, velocity.z);
-		// Velocity length
 		ImGui::Text("Vehicle Speed: %.2f", glm::length(velocity));
 
 		if (ImGui::CollapsingHeader("Camera Settings"))

@@ -37,6 +37,7 @@ public:
 	void SetModelMatrix(const glm::mat4 &matrix);
 
 	glm::mat4 GetWorldMatrix() const;
+	void SetWorldMatrix(const glm::mat4 &matrix);
 	void ApplyTransformations(const glm::mat4 &transforms);
 
 	static glm::vec3 GetRotation(glm::mat3 rotationMatrix);
@@ -50,7 +51,6 @@ public:
 	friend class SceneNode;
 
 protected:
-	void SetWorldMatrix(const glm::mat4 &matrix);
 
 	glm::vec3 m_position;
 	glm::quat m_orientation;

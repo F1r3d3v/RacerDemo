@@ -17,6 +17,7 @@ public:
 	std::shared_ptr<Model> GetBodyModel() { return m_Body; }
 
 private:
+	float m_wheelRadius;
 	std::shared_ptr<VehicleController> m_controller;
 	std::shared_ptr<Model> m_Body;
 	std::shared_ptr<Model> m_Wheel;

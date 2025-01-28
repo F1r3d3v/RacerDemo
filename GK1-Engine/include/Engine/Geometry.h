@@ -27,6 +27,8 @@ public:
 	GLuint GetEBO() const { return m_ebo; }
 	size_t GetVertexCount() const { return m_vertexCount; }
 	size_t GetIndexCount() const { return m_indexCount; }
+	const std::vector<Vertex> &GetVertices() const { return m_vertices; }
+	const std::vector<uint32_t> &GetIndices() const { return m_indices; }
 
 protected:
 	virtual void Cleanup();

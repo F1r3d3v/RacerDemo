@@ -19,6 +19,9 @@ public:
 	const std::vector<std::shared_ptr<Mesh>> &GetMeshes() const { return m_meshes; }
 	std::shared_ptr<Mesh> GetMesh(const std::string &name) const;
 
+	glm::vec3 GetMinBounds() const;
+	glm::vec3 GetMaxBounds() const;
+
 private:
 	std::vector<std::shared_ptr<Mesh>> m_meshes;
 };

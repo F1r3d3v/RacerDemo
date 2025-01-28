@@ -10,7 +10,7 @@ public:
 	struct VehicleParameters {
 		float mass = 1000.0f;
 		float wheelRadius = 0.65f;
-		float suspensionRestLength = 0.6f;
+		float suspensionRestLength = 0.935f;
 		float suspensionStiffness = 20.0f;
 		float suspensionDamping = 2.3f;
 		float suspensionCompression = 4.4f;

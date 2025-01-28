@@ -7,6 +7,7 @@ public:
 		float followDistance{ 3.5f };        // Distance behind vehicle
 		float heightOffset{ 2.0f };          // Height above vehicle
 		float followStiffness{ 5.0f };       // How quickly camera catches up
+		float strafeStiffness{ 10.0f };       // How quickly camera strafes
 		float velocityMultiplier{ 0.05f };   // How much vehicle speed affects camera distance
 		float maxExtraDistance{ 0.5f };      // Maximum extra distance from speed
 		float minFOV{ 60.0f };               // FOV when stationary

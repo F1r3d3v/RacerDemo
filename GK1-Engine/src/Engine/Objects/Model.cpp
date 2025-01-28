@@ -70,3 +70,35 @@ std::shared_ptr<Mesh> Model::GetMesh(const std::string &name) const
 
 	return nullptr;
 }
+
+glm::vec3 Model::GetMinBounds() const
+{
+	glm::vec3 minBounds = glm::vec3(FLT_MAX);
+	for (const auto &mesh : m_meshes)
+	{
+		glm::vec3 min = mesh->GetMinBounds();
+		if (min.x < minBounds.x)
+			minBounds.x = min.x;
+		if (min.y < minBounds.y)
+			minBounds.y = min.y;
+		if (min.z < minBounds.z)
+			minBounds.z = min.z;
+	}
+	return minBounds;
+}
+
+glm::vec3 Model::GetMaxBounds() const
+{
+	glm::vec3 maxBounds = glm::vec3(-FLT_MAX);
+	for (const auto &mesh : m_meshes)
+	{
+		glm::vec3 max = mesh->GetMaxBounds();
+		if (max.x > maxBounds.x)
+			maxBounds.x = max.x;
+		if (max.y > maxBounds.y)
+			maxBounds.y = max.y;
+		if (max.z > maxBounds.z)
+			maxBounds.z = max.z;
+	}
+	return maxBounds;
+}
