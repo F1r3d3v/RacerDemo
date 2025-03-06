@@ -1,8 +1,8 @@
-# GK1-Racer
+# RacerDemo
 
 **Overview**
 
-GK1-Racer is a racing game demonstration built upon the GK1-Engine, a custom 3D game engine leveraging modern OpenGL.  This project showcases the engine's capabilities, including rendering, physics, input handling, and scene management.
+RacerDemo is a racing game demonstration built upon the GK1-Engine, a custom 3D game engine leveraging modern OpenGL. This project showcases the engine's capabilities, including rendering, physics, input handling, and scene management.
 
 ---
 
@@ -39,7 +39,7 @@ This directory contains the racing game implementation built using the GK1-Engin
 
 ## Features
 
-GK1-Racer demonstrates a range of features provided by the GK1-Engine:
+RacerDemo demonstrates a range of features provided by the engine:
 
 -   **Modern OpenGL Rendering:**  Uses a programmable rendering pipeline with custom shaders.  Supports features like:
     -   Phong shading with normal interpolation.
@@ -111,7 +111,7 @@ The project relies on the following external libraries:
 1.  **Clone the Repository:**
 
     ```bash
-    git clone https://github.com/F1r3d3v/GK1-Racer.git
+    git clone https://github.com/F1r3d3v/RacerDemo.git
     ```
 
 2.  **Open the Project:**
