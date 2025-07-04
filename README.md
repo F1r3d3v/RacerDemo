@@ -6,37 +6,6 @@ RacerDemo is a racing game demonstration built upon the GK1-Engine, a custom 3D 
 
 ---
 
-## Project Structure
-
-The project is organized into two main directories: the engine itself and the game built upon it.
-
-### GK1-Engine/
-
-This directory contains the core game engine, designed to be reusable and extensible.
-
--   **include/Engine/**:  Header files defining the engine's API. These are organized into logical subdirectories:
-    -   **Loader/**:  Classes for loading resources (models, materials).  Includes support for OBJ and MTL formats.
-    -   **Objects/**:  Classes representing game objects like meshes, models, lights (point and spot), cameras, scene nodes, skyboxes, and terrain.
-    -   **Resource/**: Classes for managing resources such as materials, shaders, and textures.
-    -   **.h files**: Core engine components including application setup (App.h), input handling (Input.h), rendering (Renderer.h), resource management (ResourceManager.h), scene management (Scene.h), transformations (Transform.h), and utility classes (Log.h).
--   **src/**: Source files implementing the engine's functionality.
--   **lib/**:  Third-party libraries used by the engine.
-
-### GK1-Racer/
-
-This directory contains the racing game implementation built using the GK1-Engine.
-
--   **assets/**: Game-specific assets, such as models and textures.
--   **include/**:  Header files specific to the racing game.  Organized into subdirectories:
-    -   **CameraController/**:  Different camera controller implementations (Base, Fly, Racing).
-    -   **Objects/**: Game-specific objects (e.g., Vehicle).
-    -   **Physics/**:  Physics-related components (PhysicsManager, VehicleController).
-    -   **.h files**:  Main application class (MyApp.h) and configuration settings (Config.h).
--   **src/**: Source files for the game logic.
-- **lib/**: Third-party libraries for the game.
-
----
-
 ## Features
 
 RacerDemo demonstrates a range of features provided by the engine:
@@ -52,16 +21,22 @@ RacerDemo demonstrates a range of features provided by the engine:
     -   Uniform Buffer Objects (UBOs) for efficient data transfer to shaders.
     -   Support for both perspective and orthographic projections.
 
+![Banner](https://github.com/user-attachments/assets/d845f7a2-4043-4a3e-ae8b-dde713012ec0)
+
 -   **Dynamic Scene Management:**
     -   Hierarchical scene graph using `SceneNode` objects.
     -   Flexible transformation system (position, rotation, scale) for all game objects.
     -   Support for multiple lights (point lights and spotlights) with attenuation and color control.  A `LightManager` handles multiple lights efficiently.
     -   A `Scene` class encapsulates the rendering process and manages the scene hierarchy, camera, skybox, and lighting.
 
+![Animation](https://github.com/user-attachments/assets/0eb136e3-9748-4519-8338-c325213e1fff)
+
 -   **Physics Integration:**
     -   Uses the Bullet Physics library for realistic vehicle dynamics and collision detection.
     -   A `PhysicsManager` class wraps the Bullet dynamics world.
     -   `VehicleController` class handles vehicle movement, steering, and braking.
+
+[Drive.webm](https://github.com/user-attachments/assets/83e4ef27-6b1f-4359-8d66-16f4ab468235)
 
 -   **Camera Control:**
     -   Multiple camera modes, switchable during gameplay:
@@ -90,6 +65,37 @@ RacerDemo demonstrates a range of features provided by the engine:
           - Mouse button press/release/down/up states.
           - Mouse position and delta.
           - Mouse scroll delta.
+
+---
+
+## Project Structure
+
+The project is organized into two main directories: the engine itself and the game built upon it.
+
+### GK1-Engine/
+
+This directory contains the core game engine, designed to be reusable and extensible.
+
+-   **include/Engine/**:  Header files defining the engine's API. These are organized into logical subdirectories:
+    -   **Loader/**:  Classes for loading resources (models, materials).  Includes support for OBJ and MTL formats.
+    -   **Objects/**:  Classes representing game objects like meshes, models, lights (point and spot), cameras, scene nodes, skyboxes, and terrain.
+    -   **Resource/**: Classes for managing resources such as materials, shaders, and textures.
+    -   **.h files**: Core engine components including application setup (App.h), input handling (Input.h), rendering (Renderer.h), resource management (ResourceManager.h), scene management (Scene.h), transformations (Transform.h), and utility classes (Log.h).
+-   **src/**: Source files implementing the engine's functionality.
+-   **lib/**:  Third-party libraries used by the engine.
+
+### GK1-Racer/
+
+This directory contains the racing game implementation built using the GK1-Engine.
+
+-   **assets/**: Game-specific assets, such as models and textures.
+-   **include/**:  Header files specific to the racing game.  Organized into subdirectories:
+    -   **CameraController/**:  Different camera controller implementations (Base, Fly, Racing).
+    -   **Objects/**: Game-specific objects (e.g., Vehicle).
+    -   **Physics/**:  Physics-related components (PhysicsManager, VehicleController).
+    -   **.h files**:  Main application class (MyApp.h) and configuration settings (Config.h).
+-   **src/**: Source files for the game logic.
+- **lib/**: Third-party libraries for the game.
 
 ---
 
